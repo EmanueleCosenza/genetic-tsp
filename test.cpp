@@ -8,6 +8,7 @@ class TspGraph {
 public:
     void add_node();
     void add_edge(int n1, int n2, float weight);
+    bool is_tsp_path(std::vector<int> path);
     void print();
 };
 
@@ -26,9 +27,8 @@ bool TspGraph::is_tsp_path(std::vector<int> path) {
     // path contains V elements which are all different
     int prec = path[0];
     for (int i=1; i<path.size(); i++) {
-        adjacent = adj_list[prec];
-        found = false;
-        for (auto pair : adjacent) {
+        bool found = false;
+        for (auto pair : adj_list[prec]) {
             if (pair.first == path[i]) {
                 found = true;
                 break;
@@ -51,62 +51,22 @@ void TspGraph::print() {
     }
 }
 
-class TspPath {
-
-    std::vector<int> path;
-
-public:
-
-}
-
-class TspPopulation {
-
-    std::vector<TspPath> individuals;
-    int size;
-
-public:
-    TspPopulation(int size) {
-        this->size = size;
-    }
-    TspPopulation(std::vector<TspPath> individuals) {
-        this->individuals = individuals;
-        this->size =
-    }
-    void init_population();
-    int* compute_fitness();
-};
-
-void TSPPopulation::init_population() {
-
-}
-
 int main(int argc, char* argv[]) {
 
-    if (argc != 5) {
-        fprintf(stderr, "Usage: pop_size cross_prob mut_prob seed\n");
-        return -1;
-    }
+    TspGraph g;
 
-    int pop_size = atoi(argv[1]);
-    int cross_prob = atoi(argv[2]);
-    int mut_prob = atoi(argv[3]);
-    int seed = atoi(argv[4]);
-
-    std::srand(seed);
-
-    // Create initial population of tsp paths
-    TspPopulation population {pop_size};
-    population.init_population();
-
-    int* scores;
-    bool running = false;
-
-    while (running) {
-        scores = population.compute_fitness();
-
-    }
-
-    std::cout << "Porco dio" << '\n';
+    g.add_node();
+    g.add_node();
+    g.add_node();
+    g.add_node();
+    g.add_edge(0, 1, 3.4);
+    g.add_edge(0, 3, 2);
+    g.add_edge(1, 2, 0.05);
+    g.add_edge(0, 2, 0.05);
+    g.add_edge(2, 3, 0.05);
+    g.print();
+    std::vector<int> path{3,2,1,0};
+    std::cout << g.is_tsp_path(path) << '\n';
 
     return 0;
 }
