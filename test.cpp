@@ -9,6 +9,7 @@ class TspGraph {
 public:
     void add_node();
     void add_edge(int n1, int n2, float weight);
+    float path_length(std::vector<int> path);
     bool is_hamiltonian(std::vector<int> path);
     std::vector<int> rand_hamiltonian();
     void print();
@@ -25,6 +26,27 @@ void TspGraph::add_edge(int n1, int n2, float weight) {
     adj_list[n2].push_back(std::pair<int, float>(n1, weight));
 }
 
+float TspGraph::path_length(std::vector<int> path) {
+    float sum = 0;
+    int curr_node = path[0];
+
+    for (int i=1; i<path.size(); i++) {
+        bool found = false;
+        for (auto pair : adj_list[curr_node]) {
+            if (pair.first == path[i]) {
+                found = true;
+                sum += pair.second;
+                break;
+            }
+        }
+        if (!found) return -1;
+        else curr_node = path[i];
+    }
+
+    return sum;
+}
+
+// Checks if the path is an hamiltonian path of this graph
 bool TspGraph::is_hamiltonian(std::vector<int> path) {
     // path contains V different nodes
     int curr_node = path[0];
@@ -42,6 +64,7 @@ bool TspGraph::is_hamiltonian(std::vector<int> path) {
     return true;
 }
 
+// Returns an empty list or a random hamiltonian path of this graph
 std::vector<int> TspGraph::rand_hamiltonian() {
     std::vector<int> path;
     int curr_node = rand() % adj_list.size();
@@ -92,12 +115,24 @@ int main(int argc, char* argv[]) {
     g.add_edge(0, 2, 0.05);
     g.add_edge(2, 3, 0.05);
     g.print();
-    std::vector<int> path{3,2,1,0};
-    std::cout << g.is_hamiltonian(path) << '\n';
+
+    // std::vector<int> path{3,2,1,0};
+    // std::cout << g.is_hamiltonian(path) << '\n';
+
     std::vector<int> ham = g.rand_hamiltonian();
+    while (ham.empty()) {
+        ham = g.rand_hamiltonian();
+    }
+
+    std::cout << "Hamiltonian path: ";
+
     for (auto i : ham) {
         std::cout << i << " ";
     }
+
+    std::cout << '\n';
+
+    std::cout << "Path length: " << g.path_length(ham) << '\n';
 
     return 0;
 }

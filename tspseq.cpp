@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 class TspGraph {
 
@@ -8,6 +9,9 @@ class TspGraph {
 public:
     void add_node();
     void add_edge(int n1, int n2, float weight);
+    float path_length(std::vector<int> path);
+    bool is_hamiltonian(std::vector<int> path);
+    std::vector<int> rand_hamiltonian();
     void print();
 };
 
@@ -22,11 +26,32 @@ void TspGraph::add_edge(int n1, int n2, float weight) {
     adj_list[n2].push_back(std::pair<int, float>(n1, weight));
 }
 
+float TspGraph::path_length(std::vector<int> path) {
+    float sum = 0;
+    int curr_node = path[0];
+
+    for (int i=1; i<path.size(); i++) {
+        bool found = false;
+        for (auto pair : adj_list[curr_node]) {
+            if (pair.first == path[i]) {
+                found = true;
+                sum += pair.second;
+                break;
+            }
+        }
+        if (!found) return -1;
+        else curr_node = path[i];
+    }
+
+    return sum;
+}
+
+// Checks if the path is an hamiltonian path of this graph
 bool TspGraph::is_hamiltonian(std::vector<int> path) {
-    // path contains V elements which are all different
+    // path contains V different nodes
     int curr_node = path[0];
     for (int i=1; i<path.size(); i++) {
-        found = false;
+        bool found = false;
         for (auto pair : adj_list[curr_node]) {
             if (pair.first == path[i]) {
                 found = true;
@@ -39,6 +64,7 @@ bool TspGraph::is_hamiltonian(std::vector<int> path) {
     return true;
 }
 
+// Returns an empty list or a random hamiltonian path of this graph
 std::vector<int> TspGraph::rand_hamiltonian() {
     std::vector<int> path;
     int curr_node = rand() % adj_list.size();
@@ -53,7 +79,7 @@ std::vector<int> TspGraph::rand_hamiltonian() {
         }
         if (!pickable.empty()) {
             curr_node = pickable[rand() % pickable.size()];
-            path.push_back(curr_node);compute_fitness();
+            path.push_back(curr_node);
         }
         else return std::vector<int>();
     }
@@ -75,7 +101,7 @@ void TspGraph::print() {
 class TspPopulation {
 
     TspGraph g;
-    std::vector<std::vector<int>> individuals;
+    std::vector<std::vector<int>> individuals; // List of paths
     std::vector<float> scores;
     int size;
 
@@ -84,56 +110,98 @@ public:
         this->size = size;
         this->g = g;
     }
-    TspPopulation(std::vector<std::vector<int>> individuals) {
-        this->individuals = individuals;
-        this->size =
-    }
+    // TspPopulation(std::vector<std::vector<int>> individuals) {
+    //     this->individuals = individuals;
+    //     this->size =
+    // }
     void init_population();
-    int* compute_fitness();
+    void compute_scores();
+    void print_scores();
     void print();
 };
 
 void TspPopulation::init_population() {
     // Create 'size' tsp paths
     int generated = 0;
-    while (created < size) {
+    while (generated < size) {
         std::vector<int> path = g.rand_hamiltonian();
         if (!path.empty()) {
-            individuals.push_back(path);
-            generated++;
+            if (std::find(individuals.begin(), individuals.end(), path) == individuals.end()) {
+                individuals.push_back(path);
+                generated++;
+            }
         }
+    }
+}
+
+void TspPopulation::compute_scores() {
+    float sum = 0;
+    float score;
+
+    for (int i=0; i<individuals.size(); i++) {
+        score = g.path_length(individuals[i]);
+        sum += score;
+        scores.push_back(score);
+    }
+    for (int i=0; i<scores.size(); i++) {
+        scores[i] /= sum;
+    }
+
+}
+
+void TspPopulation::print_scores() {
+    for (int i=0; i<scores.size(); i++) {
+        for (auto node : individuals[i]) {
+            std::cout << node << " ";
+        }
+        std::cout << ": " << scores[i] << '\n';
     }
 }
 
 int main(int argc, char* argv[]) {
 
     if (argc != 5) {
-        fprintf(stderr, "Usage: pop_size cross_prob mut_prob seed\n");
+        std::cerr << "Usage: pop_size cross_prob mut_prob seed\n";
         return -1;
     }
 
     int pop_size = atoi(argv[1]);
-    int cross_prob = atoi(argv[2]);
-    int mut_prob = atoi(argv[3]);
+    float cross_prob = atof(argv[2]);
+    float mut_prob = atof(argv[3]);
     int seed = atoi(argv[4]);
 
     std::srand(seed);
 
+    TspGraph g;
+
+    g.add_node();
+    g.add_node();
+    g.add_node();
+    g.add_node();
+    g.add_edge(0, 1, 3.4);
+    g.add_edge(0, 3, 2);
+    g.add_edge(1, 2, 0.05);
+    g.add_edge(0, 2, 0.05);
+    g.add_edge(2, 3, 0.05);
+    g.print();
+
     // Create initial population of tsp paths
-    TspPopulation population {pop_size};
+    TspPopulation population {pop_size, g};
     population.init_population();
 
-    int* scores;
-    bool running = false;
+    bool running = true;
 
-    while (running) {
-        scores = population.compute_fitness();
-        // Transform scores into probabilities (normalize)
-        // while new population hasn't reached size
-            // Select 2 random parents based on fitness probabilities
-            // Crossover and mutate (based on probabilities)
-            // Add the 2 new children to new population
-    }
+    // while (running) {
+    //     population.compute_scores();
+    //     // Transform scores into probabilities (normalize)
+    //     // while new population hasn't reached size
+    //         // Select 2 random parents based on fitness probabilities
+    //         // Crossover and mutate (based on probabilities)
+    //         // Add the 2 new children to new population
+    // }
+
+    population.compute_scores();
+    population.print_scores();
 
     std::cout << "Porco dio" << '\n';
 
