@@ -1,0 +1,6 @@
+Choosing Mutation and Crossover Ratios for
+Genetic Algorithms—A Review with a New
+Dynamic Approach
+
+- Parameter tuning, not any kind of dynamic adaptive procedure to find cross_prob
+    and mut_prob

@@ -2,6 +2,7 @@
 #include <vector>
 #include <algorithm>
 #include <cstdlib>
+#include "graph.h"
 
 void print_path(std::vector<int> path) {
     for (auto node : path) {
@@ -48,102 +49,6 @@ void mutate(std::vector<int> &path) {
     int temp = path[i];
     path[i] = path[j];
     path[j] = temp;
-}
-
-class TspGraph {
-
-    std::vector<std::vector<std::pair<int, float>>> adj_list;
-
-public:
-    void add_node();
-    void add_edge(int n1, int n2, float weight);
-    float path_length(std::vector<int> path);
-    bool is_hamiltonian(std::vector<int> path);
-    std::vector<int> rand_hamiltonian();
-    void print();
-};
-
-void TspGraph::add_node() {
-    // Add new empty adjacency list
-    adj_list.push_back(std::vector<std::pair<int, float>>());
-}
-
-void TspGraph::add_edge(int n1, int n2, float weight) {
-    // Add undirected edge with the specified weight
-    adj_list[n1].push_back(std::pair<int, float>(n2, weight));
-    adj_list[n2].push_back(std::pair<int, float>(n1, weight));
-}
-
-float TspGraph::path_length(std::vector<int> path) {
-    float sum = 0;
-    int curr_node = path[0];
-
-    for (int i=1; i<path.size(); i++) {
-        bool found = false;
-        for (auto pair : adj_list[curr_node]) {
-            if (pair.first == path[i]) {
-                found = true;
-                sum += pair.second;
-                break;
-            }
-        }
-        if (!found) return -1;
-        else curr_node = path[i];
-    }
-
-    return sum;
-}
-
-// Checks if the path is an hamiltonian path of this graph
-bool TspGraph::is_hamiltonian(std::vector<int> path) {
-    // path contains V different nodes
-    int curr_node = path[0];
-    for (int i=1; i<path.size(); i++) {
-        bool found = false;
-        for (auto pair : adj_list[curr_node]) {
-            if (pair.first == path[i]) {
-                found = true;
-                break;
-            }
-        }
-        if (!found) return false;
-        else curr_node = path[i];
-    }
-    return true;
-}
-
-// Returns an empty list or a random hamiltonian path of this graph
-std::vector<int> TspGraph::rand_hamiltonian() {
-    std::vector<int> path;
-    int curr_node = std::rand() % adj_list.size();
-    path.push_back(curr_node);
-
-    while (path.size() < adj_list.size()) {
-        std::vector<int> pickable;
-        for (auto pair : adj_list[curr_node]) {
-            if(std::find(path.begin(), path.end(), pair.first) == path.end()) {
-                pickable.push_back(pair.first);
-            }
-        }
-        if (!pickable.empty()) {
-            curr_node = pickable[std::rand() % pickable.size()];
-            path.push_back(curr_node);
-        }
-        else return std::vector<int>();
-    }
-
-    return path;
-}
-
-void TspGraph::print() {
-    std::cout << "Printing graph" << '\n';
-    for (int i=0; i<adj_list.size(); i++) {
-        std::cout << "Node " << i << ":\n";
-        for (auto pair : adj_list[i]) {
-            std::cout << "\tNode " << pair.first << ", ";
-            std::cout << "Weight: " << pair.second << "\n";
-        }
-    }
 }
 
 class TspPopulation {
