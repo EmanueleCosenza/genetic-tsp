@@ -1,5 +1,5 @@
 #include <iostream>
-#include <cstdlib>
+#include <fstream>
 #include "graph.h"
 
 void print_path(std::vector<int> path) {
@@ -11,20 +11,15 @@ void print_path(std::vector<int> path) {
 
 int main(int argc, char* argv[]) {
 
+    if (argc != 2) {
+        std::cerr << "Usage: graph_file\n";
+        return -1;
+    }
+
+    std::string filename = argv[1];
+
     TspGraph g;
-
-    int nodes = atoi(argv[1]);
-    int seed = atoi(argv[2]);
-    std::srand(seed);
-
-    for (int i=0; i<nodes; i++) {
-        g.add_node();
-    }
-    for (int i=0; i<nodes; i++) {
-        for (int j=i+1; j<nodes; j++) {
-            if (j!=i) g.add_edge(i, j, std::rand()%9 + 1);
-        }
-    }
+    g.from(filename);
     g.print();
 
     std::pair<float, std::vector<int>> len_and_path = g.bruteforce(std::vector<int>());

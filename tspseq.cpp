@@ -18,8 +18,6 @@ void crossover(std::vector<int> &pathA, std::vector<int> &pathB) {
     std::vector<int> oldA = pathA;
     std::vector<int> oldB = pathB;
 
-    // std::cout << "Indices: " << i << " " << j << '\n';
-
     int c = i;
 
     for (auto k : oldA) {
@@ -158,30 +156,23 @@ std::vector<int> TspPopulation::pick_parent() {
 
 int main(int argc, char* argv[]) {
 
-    if (argc != 5) {
-        std::cerr << "Usage: pop_size cross_prob mut_prob seed\n";
+    if (argc != 7) {
+        std::cerr << "Usage: graph_file pop_size cross_prob mut_prob max_gen seed\n";
         return -1;
     }
 
-    int pop_size = atoi(argv[1]);
-    float cross_prob = atof(argv[2]);
-    float mut_prob = atof(argv[3]);
-    int seed = atoi(argv[4]);
+    std::string graph_file = argv[1];
+    int pop_size = atoi(argv[2]);
+    float cross_prob = atof(argv[3]);
+    float mut_prob = atof(argv[4]);
+    int max_gen = atoi(argv[5]);
+    int seed = atoi(argv[6]);
 
     std::srand(seed);
 
     // Initialize graph
     TspGraph g;
-
-    int ns = 20;
-    for (int i=0; i<ns; i++) {
-        g.add_node();
-    }
-    for (int i=0; i<ns; i++) {
-        for (int j=i+1; j<ns; j++) {
-            if (j!=i) g.add_edge(i, j, j);
-        }
-    }
+    g.from(graph_file);
     g.print();
 
     std::cout << "\n";
@@ -194,7 +185,7 @@ int main(int argc, char* argv[]) {
     int generations = 0;
 
     // Genetic algorithm loop
-    while (running && generations < 10000) {
+    while (running && generations < max_gen) {
 
         std::cout << "Generation " << generations << '\n';
 
@@ -221,43 +212,28 @@ int main(int argc, char* argv[]) {
                 pb = population.pick_parent();
             } while (pb == pa);
 
-            // std::cout << "Selected parents:" << '\n';
-            // print_path(pa);
-            // print_path(pb);
-
-            // Crossover AND mutate (based on probabilities)
+            // Crossover and mutation (based on probabilities)
             float r_cross = (float) std::rand() / (float) RAND_MAX;
             float r_mut = (float) std::rand() / (float) RAND_MAX;
             if (r_cross < cross_prob) {
                 crossover(pa, pb);
-                // std::cout << "After crossover:" << '\n';
-                // print_path(pa);
-                // print_path(pb);
             }
 
             if (r_mut < mut_prob) {
                 mutate(pa);
                 mutate(pb);
-                // std::cout << "After mutation:" << '\n';
-                // print_path(pa);
-                // print_path(pb);
             }
 
             // Add the 2 new children to new population (if valid)
             if (g.is_hamiltonian(pa) && std::find(new_individuals.begin(), new_individuals.end(), pa) == new_individuals.end()) {
                 new_individuals.push_back(pa);
-                // std::cout << "Valid A" << '\n';
             }
             if (new_individuals.size() < pop_size) {
                 if (g.is_hamiltonian(pb) && std::find(new_individuals.begin(), new_individuals.end(), pb) == new_individuals.end()) {
                     new_individuals.push_back(pb);
-                    // std::cout << "Valid B" << '\n';
                 }
             }
-            // std::cout << "New population size: " << new_individuals.size() << '\n';
-            // std::cout << '\n';
         }
-        // population = TspPopulation(new_individuals);
         population.set_individuals(new_individuals);
         generations++;
     }

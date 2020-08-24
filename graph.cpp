@@ -1,6 +1,45 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include "graph.h"
+
+void TspGraph::from(std::string filename) {
+    std::ifstream file(filename);
+
+    int nodes;
+    file >> nodes;
+    for (int i=0; i<nodes; i++) {
+        adj_list.push_back(std::vector<std::pair<int, float>>());
+    }
+
+    int n1, n2;
+    float w;
+    while (file >> n1 >> n2 >> w) {
+        this->add_edge(n1, n2, w);
+    }
+}
+
+void TspGraph::to(std::string filename) {
+    std::ofstream file(filename);
+
+    file << adj_list.size() << '\n';
+    for (int i=0; i<adj_list.size(); i++) {
+        for (auto pair : adj_list[i]) {
+            file << i << " " << pair.first << " " << pair.second << '\n';
+        }
+    }
+}
+
+void TspGraph::rand_complete(int nodes) {
+    for (int i=0; i<nodes; i++) {
+        this->add_node();
+    }
+    for (int i=0; i<nodes; i++) {
+        for (int j=i+1; j<nodes; j++) {
+            if (j!=i) this->add_edge(i, j, std::rand()%9);
+        }
+    }
+}
 
 void TspGraph::add_node() {
     // Add new empty adjacency list
@@ -9,8 +48,19 @@ void TspGraph::add_node() {
 
 void TspGraph::add_edge(int n1, int n2, float weight) {
     // Add undirected edge with the specified weight
+    if (this->are_linked(n1, n2)) return;
     adj_list[n1].push_back(std::pair<int, float>(n2, weight));
     adj_list[n2].push_back(std::pair<int, float>(n1, weight));
+}
+
+bool TspGraph::are_linked(int n1, int n2) {
+    bool linked = false;
+    for (auto pair : adj_list[n1]) {
+        if (pair.first == n2) {
+            return true;
+        }
+    }
+    return false;
 }
 
 float TspGraph::path_length(std::vector<int> path) {
