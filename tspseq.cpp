@@ -1,6 +1,54 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <cstdlib>
+
+void print_path(std::vector<int> path) {
+    for (auto node : path) {
+        std::cout << node << " ";
+    }
+    std::cout << '\n';
+}
+
+void crossover(std::vector<int> &pathA, std::vector<int> &pathB) {
+    int i = std::rand() % (pathA.size()-1);
+    int j = (i+1) + (std::rand() % (pathA.size()-(i+1)));
+
+    std::vector<int> oldA = pathA;
+    std::vector<int> oldB = pathB;
+
+    // std::cout << "Indices: " << i << " " << j << '\n';
+
+    int c = i;
+
+    for (auto k : oldA) {
+        if (std::find(oldB.begin()+i, oldB.begin()+j+1, k) != oldB.begin()+j+1) {
+            pathB[c] = k;
+            c++;
+            if (c > j) break;
+        }
+    }
+
+    c = i;
+
+    for (auto k : oldB) {
+        if (std::find(oldA.begin()+i, oldA.begin()+j+1, k) != oldA.begin()+j+1) {
+            pathA[c] = k;
+            c++;
+            if (c > j) break;
+        }
+    }
+
+}
+
+void mutate(std::vector<int> &path) {
+    int i = std::rand() % (path.size()-1);
+    int j = (i+1) + (std::rand() % (path.size()-(i+1)));
+
+    int temp = path[i];
+    path[i] = path[j];
+    path[j] = temp;
+}
 
 class TspGraph {
 
@@ -67,7 +115,7 @@ bool TspGraph::is_hamiltonian(std::vector<int> path) {
 // Returns an empty list or a random hamiltonian path of this graph
 std::vector<int> TspGraph::rand_hamiltonian() {
     std::vector<int> path;
-    int curr_node = rand() % adj_list.size();
+    int curr_node = std::rand() % adj_list.size();
     path.push_back(curr_node);
 
     while (path.size() < adj_list.size()) {
@@ -78,7 +126,7 @@ std::vector<int> TspGraph::rand_hamiltonian() {
             }
         }
         if (!pickable.empty()) {
-            curr_node = pickable[rand() % pickable.size()];
+            curr_node = pickable[std::rand() % pickable.size()];
             path.push_back(curr_node);
         }
         else return std::vector<int>();
@@ -103,6 +151,8 @@ class TspPopulation {
     TspGraph g;
     std::vector<std::vector<int>> individuals; // List of paths
     std::vector<float> scores;
+    std::vector<int> best_path;
+    float best_length = std::numeric_limits<float>::infinity();
     int size;
 
 public:
@@ -110,22 +160,23 @@ public:
         this->size = size;
         this->g = g;
     }
-    // TspPopulation(std::vector<std::vector<int>> individuals) {
-    //     this->individuals = individuals;
-    //     this->size =
-    // }
     void init_population();
+    void set_individuals(std::vector<std::vector<int>> individuals);
     void compute_scores();
+    std::vector<int> pick_parent();
     void print_scores();
+    std::vector<int> get_best_path();
+    float get_best_length();
     void print();
 };
 
 void TspPopulation::init_population() {
-    // Create 'size' tsp paths
+    // Create 'size' tsp random paths
     int generated = 0;
     while (generated < size) {
         std::vector<int> path = g.rand_hamiltonian();
         if (!path.empty()) {
+            // If path is not already in population, add it
             if (std::find(individuals.begin(), individuals.end(), path) == individuals.end()) {
                 individuals.push_back(path);
                 generated++;
@@ -134,12 +185,26 @@ void TspPopulation::init_population() {
     }
 }
 
+void TspPopulation::set_individuals(std::vector<std::vector<int>> individuals) {
+    this->individuals = individuals;
+    size = individuals.size();
+    scores = std::vector<float>();
+}
+
+
+// Compute scores as mating probabilities (shorter path -> higher prob.)
 void TspPopulation::compute_scores() {
     float sum = 0;
     float score;
 
     for (int i=0; i<individuals.size(); i++) {
         score = g.path_length(individuals[i]);
+        // Update best path if necessary
+        if (score<best_length) {
+            best_length = score;
+            best_path = individuals[i];
+        }
+        score = 1/score;
         sum += score;
         scores.push_back(score);
     }
@@ -150,6 +215,7 @@ void TspPopulation::compute_scores() {
 }
 
 void TspPopulation::print_scores() {
+    std::cout << "Printing population and scores:" << '\n';
     for (int i=0; i<scores.size(); i++) {
         for (auto node : individuals[i]) {
             std::cout << node << " ";
@@ -157,6 +223,33 @@ void TspPopulation::print_scores() {
         std::cout << ": " << scores[i] << '\n';
     }
 }
+
+std::vector<int> TspPopulation::get_best_path() {
+    return best_path;
+}
+
+float TspPopulation::get_best_length() {
+    return best_length;
+}
+
+// Pick a parent path according to computed probabilities
+std::vector<int> TspPopulation::pick_parent() {
+    float r = (float) std::rand() / (float) RAND_MAX; // random between 0 and 1
+    int i = 0;
+    while (r>0) {
+        r -= scores[i];
+        if (r>0) {
+            i++;
+            if (i >= individuals.size()) {
+                i = individuals.size()-1;
+                break;
+            }
+        }
+    }
+    return individuals[i];
+}
+
+
 
 int main(int argc, char* argv[]) {
 
@@ -172,38 +265,97 @@ int main(int argc, char* argv[]) {
 
     std::srand(seed);
 
+    // Initialize graph
     TspGraph g;
 
-    g.add_node();
-    g.add_node();
-    g.add_node();
-    g.add_node();
-    g.add_edge(0, 1, 3.4);
-    g.add_edge(0, 3, 2);
-    g.add_edge(1, 2, 0.05);
-    g.add_edge(0, 2, 0.05);
-    g.add_edge(2, 3, 0.05);
+    int ns = 20;
+    for (int i=0; i<ns; i++) {
+        g.add_node();
+    }
+    for (int i=0; i<ns; i++) {
+        for (int j=i+1; j<ns; j++) {
+            if (j!=i) g.add_edge(i, j, j);
+        }
+    }
     g.print();
+
+    std::cout << "\n";
 
     // Create initial population of tsp paths
     TspPopulation population {pop_size, g};
     population.init_population();
 
     bool running = true;
+    int generations = 0;
 
-    // while (running) {
-    //     population.compute_scores();
-    //     // Transform scores into probabilities (normalize)
-    //     // while new population hasn't reached size
-    //         // Select 2 random parents based on fitness probabilities
-    //         // Crossover and mutate (based on probabilities)
-    //         // Add the 2 new children to new population
-    // }
+    // Genetic algorithm loop
+    while (running && generations < 10000) {
 
-    population.compute_scores();
-    population.print_scores();
+        std::cout << "Generation " << generations << '\n';
 
-    std::cout << "Porco dio" << '\n';
+        population.compute_scores();
+
+        // Print population
+        // population.print_scores();
+        // std::cout << '\n';
+
+        // Print gen info
+        std::cout << "Best path: ";
+        print_path(population.get_best_path());
+        printf("Best length: %f", population.get_best_length());
+        std::cout << '\n';
+
+        std::vector<std::vector<int>> new_individuals;
+
+        while (new_individuals.size() < pop_size) {
+            std::vector<int> pa;
+            std::vector<int> pb;
+            // Select 2 different random parents based on fitness probabilities
+            pa = population.pick_parent();
+            do {
+                pb = population.pick_parent();
+            } while (pb == pa);
+
+            // std::cout << "Selected parents:" << '\n';
+            // print_path(pa);
+            // print_path(pb);
+
+            // Crossover AND mutate (based on probabilities)
+            float r_cross = (float) std::rand() / (float) RAND_MAX;
+            float r_mut = (float) std::rand() / (float) RAND_MAX;
+            if (r_cross < cross_prob) {
+                crossover(pa, pb);
+                // std::cout << "After crossover:" << '\n';
+                // print_path(pa);
+                // print_path(pb);
+            }
+
+            if (r_mut < mut_prob) {
+                mutate(pa);
+                mutate(pb);
+                // std::cout << "After mutation:" << '\n';
+                // print_path(pa);
+                // print_path(pb);
+            }
+
+            // Add the 2 new children to new population (if valid)
+            if (g.is_hamiltonian(pa) && std::find(new_individuals.begin(), new_individuals.end(), pa) == new_individuals.end()) {
+                new_individuals.push_back(pa);
+                // std::cout << "Valid A" << '\n';
+            }
+            if (new_individuals.size() < pop_size) {
+                if (g.is_hamiltonian(pb) && std::find(new_individuals.begin(), new_individuals.end(), pb) == new_individuals.end()) {
+                    new_individuals.push_back(pb);
+                    // std::cout << "Valid B" << '\n';
+                }
+            }
+            // std::cout << "New population size: " << new_individuals.size() << '\n';
+            // std::cout << '\n';
+        }
+        // population = TspPopulation(new_individuals);
+        population.set_individuals(new_individuals);
+        generations++;
+    }
 
     return 0;
 }
