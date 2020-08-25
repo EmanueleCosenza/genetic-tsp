@@ -6,14 +6,15 @@
 #include "genetic.hpp"
 
 void crossover(std::vector<int> &pathA, std::vector<int> &pathB) {
+    // Random cross-over indices
     int i = std::rand() % (pathA.size()-1);
     int j = (i+1) + (std::rand() % (pathA.size()-(i+1)));
-
+    // Path copies
     std::vector<int> oldA = pathA;
     std::vector<int> oldB = pathB;
-
     int c = i;
 
+    // Cross-over on B
     for (auto k : oldA) {
         if (std::find(oldB.begin()+i, oldB.begin()+j+1, k) != oldB.begin()+j+1) {
             pathB[c] = k;
@@ -24,6 +25,7 @@ void crossover(std::vector<int> &pathA, std::vector<int> &pathB) {
 
     c = i;
 
+    // Cross-over on A
     for (auto k : oldB) {
         if (std::find(oldA.begin()+i, oldA.begin()+j+1, k) != oldA.begin()+j+1) {
             pathA[c] = k;
@@ -45,7 +47,7 @@ void mutate(std::vector<int> &path) {
 
 void TspPopulation::init_population() {
     // Create 'size' tsp random paths
-    int generated = 0;
+    std::size_t generated = 0;
     while (generated < size) {
         std::vector<int> path = g.rand_hamiltonian();
         if (!path.empty()) {
@@ -70,7 +72,7 @@ void TspPopulation::compute_scores() {
     float sum = 0;
     float score;
 
-    for (int i=0; i<individuals.size(); i++) {
+    for (std::size_t i=0; i<individuals.size(); i++) {
         score = g.path_length(individuals[i]);
         // Update best path if necessary
         if (score<best_length) {
@@ -81,15 +83,14 @@ void TspPopulation::compute_scores() {
         sum += score;
         scores.push_back(score);
     }
-    for (int i=0; i<scores.size(); i++) {
+    for (std::size_t i=0; i<scores.size(); i++) {
         scores[i] /= sum;
     }
-
 }
 
 void TspPopulation::print_scores() {
     std::cout << "Printing population and scores:" << '\n';
-    for (int i=0; i<scores.size(); i++) {
+    for (std::size_t i=0; i<scores.size(); i++) {
         for (auto node : individuals[i]) {
             std::cout << node << " ";
         }
@@ -108,7 +109,7 @@ float TspPopulation::get_best_length() {
 // Pick a parent path according to computed probabilities
 std::vector<int> TspPopulation::pick_parent() {
     float r = (float) std::rand() / (float) RAND_MAX; // random between 0 and 1
-    int i = 0;
+    std::size_t i = 0;
     while (r>0) {
         r -= scores[i];
         if (r>0) {

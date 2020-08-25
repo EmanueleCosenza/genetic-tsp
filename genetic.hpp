@@ -15,10 +15,10 @@ class TspPopulation {
     std::vector<float> scores;
     std::vector<int> best_path;
     float best_length = std::numeric_limits<float>::infinity();
-    int size;
+    std::size_t size;
 
 public:
-    TspPopulation(int size, TspGraph g) {
+    TspPopulation(std::size_t size, TspGraph g) {
         this->size = size;
         this->g = g;
     }

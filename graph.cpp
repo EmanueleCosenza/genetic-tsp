@@ -24,7 +24,7 @@ void TspGraph::to(std::string filename) {
     std::ofstream file(filename);
 
     file << adj_list.size() << '\n';
-    for (int i=0; i<adj_list.size(); i++) {
+    for (std::size_t i=0; i<adj_list.size(); i++) {
         for (auto pair : adj_list[i]) {
             file << i << " " << pair.first << " " << pair.second << '\n';
         }
@@ -55,7 +55,6 @@ void TspGraph::add_edge(int n1, int n2, float weight) {
 }
 
 bool TspGraph::are_linked(int n1, int n2) {
-    bool linked = false;
     for (auto pair : adj_list[n1]) {
         if (pair.first == n2) {
             return true;
@@ -68,7 +67,7 @@ float TspGraph::path_length(std::vector<int> path) {
     float sum = 0;
     int curr_node = path[0];
 
-    for (int i=1; i<path.size(); i++) {
+    for (std::size_t i=1; i<path.size(); i++) {
         bool found = false;
         for (auto pair : adj_list[curr_node]) {
             if (pair.first == path[i]) {
@@ -88,7 +87,7 @@ float TspGraph::path_length(std::vector<int> path) {
 bool TspGraph::is_hamiltonian(std::vector<int> path) {
     // path contains V different nodes
     int curr_node = path[0];
-    for (int i=1; i<path.size(); i++) {
+    for (std::size_t i=1; i<path.size(); i++) {
         bool found = false;
         for (auto pair : adj_list[curr_node]) {
             if (pair.first == path[i]) {
@@ -132,7 +131,7 @@ std::pair<float, std::vector<int>> TspGraph::bruteforce(std::vector<int> path) {
 
     if (path.size() == adj_list.size()) return std::make_pair(0, path);
     if (path.empty()) {
-        for (int i=0; i<adj_list.size(); i++) {
+        for (std::size_t i=0; i<adj_list.size(); i++) {
             pickable.push_back(i);
         }
     } else {
@@ -179,7 +178,7 @@ std::pair<float, std::vector<int>> TspGraph::bruteforce(std::vector<int> path) {
 
 void TspGraph::print() {
     std::cout << "Printing graph" << '\n';
-    for (int i=0; i<adj_list.size(); i++) {
+    for (std::size_t i=0; i<adj_list.size(); i++) {
         std::cout << "Node " << i << ":\n";
         for (auto pair : adj_list[i]) {
             std::cout << "\tNode " << pair.first << ", ";

@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::string graph_file = argv[1];
-    int pop_size = atoi(argv[2]);
+    std::size_t pop_size = atoi(argv[2]);
     float cross_prob = atof(argv[3]);
     float mut_prob = atof(argv[4]);
     int max_gen = atoi(argv[5]);
