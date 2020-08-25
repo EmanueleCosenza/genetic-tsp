@@ -9,11 +9,13 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
+    unsigned int seed = 1;
+
     std::string filename = argv[1];
     int nodes = atoi(argv[2]);
 
     TspGraph g;
-    g.rand_complete(nodes);
+    g.rand_complete(nodes, &seed);
     g.to(filename);
     g.print();
 

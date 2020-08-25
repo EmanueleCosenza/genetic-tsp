@@ -1,14 +1,13 @@
 #include <vector>
 #include <algorithm>
-#include <cstdlib>
 #include <iostream>
 #include "graph.hpp"
 #include "genetic.hpp"
 
-void crossover(std::vector<int> &pathA, std::vector<int> &pathB) {
+void crossover(std::vector<int> &pathA, std::vector<int> &pathB, unsigned int *seedp) {
     // Random cross-over indices
-    int i = std::rand() % (pathA.size()-1);
-    int j = (i+1) + (std::rand() % (pathA.size()-(i+1)));
+    int i = rand_r(seedp) % (pathA.size()-1);
+    int j = (i+1) + (rand_r(seedp) % (pathA.size()-(i+1)));
     // Path copies
     std::vector<int> oldA = pathA;
     std::vector<int> oldB = pathB;
@@ -36,20 +35,20 @@ void crossover(std::vector<int> &pathA, std::vector<int> &pathB) {
 
 }
 
-void mutate(std::vector<int> &path) {
-    int i = std::rand() % (path.size()-1);
-    int j = (i+1) + (std::rand() % (path.size()-(i+1)));
+void mutate(std::vector<int> &path, unsigned int *seedp) {
+    int i = rand_r(seedp) % (path.size()-1);
+    int j = (i+1) + (rand_r(seedp) % (path.size()-(i+1)));
 
     int temp = path[i];
     path[i] = path[j];
     path[j] = temp;
 }
 
-void TspPopulation::init_population() {
+void TspPopulation::init_population(unsigned int *seedp) {
     // Create 'size' tsp random paths
     std::size_t generated = 0;
     while (generated < size) {
-        std::vector<int> path = g.rand_hamiltonian();
+        std::vector<int> path = g.rand_hamiltonian(seedp);
         if (!path.empty()) {
             // If path is not already in population, add it
             if (std::find(individuals.begin(), individuals.end(), path) == individuals.end()) {
@@ -107,8 +106,8 @@ float TspPopulation::get_best_length() {
 }
 
 // Pick a parent path according to computed probabilities
-std::vector<int> TspPopulation::pick_parent() {
-    float r = (float) std::rand() / (float) RAND_MAX; // random between 0 and 1
+std::vector<int> TspPopulation::pick_parent(unsigned int *seedp) {
+    float r = (float) rand_r(seedp) / (float) RAND_MAX; // random between 0 and 1
     std::size_t i = 0;
     while (r>0) {
         r -= scores[i];

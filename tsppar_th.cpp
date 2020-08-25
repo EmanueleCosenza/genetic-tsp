@@ -1,34 +1,13 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <thread>
 #include <cstdlib>
+
 #include "graph.hpp"
 #include "genetic.hpp"
 
-
-int main(int argc, char* argv[]) {
-
-    if (argc != 7) {
-        std::cerr << "Usage: graph_file pop_size cross_prob mut_prob max_gen seed\n";
-        return -1;
-    }
-
-    std::string graph_file = argv[1];
-    int pop_size = atoi(argv[2]);
-    float cross_prob = atof(argv[3]);
-    float mut_prob = atof(argv[4]);
-    int max_gen = atoi(argv[5]);
-    int seed = atoi(argv[6]);
-
-    std::srand(seed);
-
-    // Initialize graph
-    TspGraph g;
-    g.from(graph_file);
-    g.print();
-
-    std::cout << "\n";
-
+void pop_job(TspGraph g, std::size_t pop_size, float cross_prob, float mut_prob, int max_gen, unsigned int seed) {
     // Create initial population of tsp paths
     TspPopulation population {pop_size, g};
     population.init_population();
@@ -89,6 +68,34 @@ int main(int argc, char* argv[]) {
         population.set_individuals(new_individuals);
         generations++;
     }
+
+    return;
+}
+
+
+int main(int argc, char* argv[]) {
+
+    if (argc != 8) {
+        std::cerr << "Usage: graph_file pop_size cross_prob mut_prob max_gen nw seed\n";
+        return -1;
+    }
+
+    std::string graph_file = argv[1];
+    std::size_t pop_size = atoi(argv[2]);
+    float cross_prob = atof(argv[3]);
+    float mut_prob = atof(argv[4]);
+    int max_gen = atoi(argv[5]);
+    int nw = atoi(argv[6]);
+    unsigned int seed = atoi(argv[7]);
+
+    // Initialize graph
+    TspGraph g;
+    g.from(graph_file);
+    g.print();
+
+    std::cout << "\n";
+
+
 
     return 0;
 }

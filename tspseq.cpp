@@ -20,9 +20,7 @@ int main(int argc, char* argv[]) {
     float cross_prob = atof(argv[3]);
     float mut_prob = atof(argv[4]);
     int max_gen = atoi(argv[5]);
-    int seed = atoi(argv[6]);
-
-    std::srand(seed);
+    unsigned int seed = atoi(argv[6]);
 
     // Initialize graph
     TspGraph g;
@@ -33,7 +31,7 @@ int main(int argc, char* argv[]) {
 
     // Create initial population of tsp paths
     TspPopulation population {pop_size, g};
-    population.init_population();
+    population.init_population(&seed);
 
     bool running = true;
     int generations = 0;
@@ -63,21 +61,21 @@ int main(int argc, char* argv[]) {
             std::vector<int> pa;
             std::vector<int> pb;
             // Select 2 different random parents based on fitness probabilities
-            pa = population.pick_parent();
+            pa = population.pick_parent(&seed);
             do {
-                pb = population.pick_parent();
+                pb = population.pick_parent(&seed);
             } while (pb == pa);
 
             // Crossover and mutation (based on probabilities)
-            float r_cross = (float) std::rand() / (float) RAND_MAX;
-            float r_mut = (float) std::rand() / (float) RAND_MAX;
+            float r_cross = (float) rand_r(&seed) / (float) RAND_MAX;
+            float r_mut = (float) rand_r(&seed) / (float) RAND_MAX;
             if (r_cross < cross_prob) {
-                crossover(pa, pb);
+                crossover(pa, pb, &seed);
             }
 
             if (r_mut < mut_prob) {
-                mutate(pa);
-                mutate(pb);
+                mutate(pa, &seed);
+                mutate(pb, &seed);
             }
 
             // Add the 2 new children to new population (if valid)

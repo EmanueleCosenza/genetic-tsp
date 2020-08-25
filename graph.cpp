@@ -31,13 +31,13 @@ void TspGraph::to(std::string filename) {
     }
 }
 
-void TspGraph::rand_complete(int nodes) {
+void TspGraph::rand_complete(int nodes, unsigned int *seedp) {
     for (int i=0; i<nodes; i++) {
         this->add_node();
     }
     for (int i=0; i<nodes; i++) {
         for (int j=i+1; j<nodes; j++) {
-            if (j!=i) this->add_edge(i, j, std::rand()%9);
+            if (j!=i) this->add_edge(i, j, rand_r(seedp)%9);
         }
     }
 }
@@ -102,9 +102,9 @@ bool TspGraph::is_hamiltonian(std::vector<int> path) {
 }
 
 // Returns an empty list or a random hamiltonian path of this graph
-std::vector<int> TspGraph::rand_hamiltonian() {
+std::vector<int> TspGraph::rand_hamiltonian(unsigned int *seedp) {
     std::vector<int> path;
-    int curr_node = std::rand() % adj_list.size();
+    int curr_node = rand_r(seedp) % adj_list.size();
     path.push_back(curr_node);
 
     while (path.size() < adj_list.size()) {
@@ -115,7 +115,7 @@ std::vector<int> TspGraph::rand_hamiltonian() {
             }
         }
         if (!pickable.empty()) {
-            curr_node = pickable[std::rand() % pickable.size()];
+            curr_node = pickable[rand_r(seedp) % pickable.size()];
             path.push_back(curr_node);
         }
         else return std::vector<int>();
