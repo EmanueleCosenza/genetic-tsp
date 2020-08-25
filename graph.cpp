@@ -187,3 +187,10 @@ void TspGraph::print() {
         }
     }
 }
+
+void print_path(std::vector<int> path) {
+    for (auto node : path) {
+        std::cout << node << " ";
+    }
+    std::cout << '\n';
+}

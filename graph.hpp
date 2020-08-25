@@ -21,4 +21,6 @@ public:
     void print();
 };
 
+void print_path(std::vector<int> path);
+
 #endif

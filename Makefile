@@ -3,7 +3,7 @@ CXX = g++
 CXXFLAGS = -O3 -I ../Utils
 LDFLAGS = -pthread
 
-OBJS = completemap completemap1 simplemap aoverhead toverhead poverhead syscalls syscall-clone
+OBJS = tspseq tspbrute csv
 
 clean:
 	rm -f $(OBJS) *~

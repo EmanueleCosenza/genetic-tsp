@@ -2,12 +2,6 @@
 #include <fstream>
 #include "graph.hpp"
 
-void print_path(std::vector<int> path) {
-    for (auto node : path) {
-        std::cout << node << " ";
-    }
-    std::cout << '\n';
-}
 
 int main(int argc, char* argv[]) {
 

@@ -2,16 +2,10 @@
 #include <vector>
 #include <algorithm>
 #include <cstdlib>
+#include <chrono>
+
 #include "graph.hpp"
 #include "genetic.hpp"
-
-void print_path(std::vector<int> path) {
-    for (auto node : path) {
-        std::cout << node << " ";
-    }
-    std::cout << '\n';
-}
-
 
 
 int main(int argc, char* argv[]) {
@@ -43,6 +37,8 @@ int main(int argc, char* argv[]) {
 
     bool running = true;
     int generations = 0;
+
+    auto start = std::chrono::high_resolution_clock::now();
 
     // Genetic algorithm loop
     while (running && generations < max_gen) {
@@ -97,6 +93,13 @@ int main(int argc, char* argv[]) {
         population.set_individuals(new_individuals);
         generations++;
     }
+
+    std::cout << '\n';
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto tot_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+    std::cout << "Total time: " << tot_time << " ms" << std::endl;
 
     return 0;
 }
