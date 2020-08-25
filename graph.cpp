@@ -1,7 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include "graph.h"
+#include <algorithm>
+#include "graph.hpp"
 
 void TspGraph::from(std::string filename) {
     std::ifstream file(filename);

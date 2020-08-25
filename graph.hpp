@@ -2,7 +2,6 @@
 #define GRAPH_H
 
 #include <vector>
-#include <algorithm>
 
 class TspGraph {
 

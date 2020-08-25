@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include "graph.h"
+#include "graph.hpp"
 
 void print_path(std::vector<int> path) {
     for (auto node : path) {
