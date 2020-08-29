@@ -1,75 +1,46 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include <thread>
 #include <cstdlib>
+#include <chrono>
+#include <thread>
 
 #include "graph.hpp"
 #include "genetic.hpp"
+#include "sync.hpp"
 
-void pop_job(TspGraph g, std::size_t pop_size, float cross_prob, float mut_prob, int max_gen, unsigned int seed) {
-    // Create initial population of tsp paths
-    TspPopulation population {pop_size, g};
-    population.init_population();
-
-    bool running = true;
-    int generations = 0;
-
-    // Genetic algorithm loop
-    while (running && generations < max_gen) {
-
-        std::cout << "Generation " << generations << '\n';
-
-        population.compute_scores();
-
-        // Print population
-        // population.print_scores();
-        // std::cout << '\n';
-
-        // Print gen info
-        std::cout << "Best path: ";
-        print_path(population.get_best_path());
-        printf("Best length: %f", population.get_best_length());
-        std::cout << '\n';
-
-        std::vector<std::vector<int>> new_individuals;
-
-        while (new_individuals.size() < pop_size) {
-            std::vector<int> pa;
-            std::vector<int> pb;
-            // Select 2 different random parents based on fitness probabilities
-            pa = population.pick_parent();
-            do {
-                pb = population.pick_parent();
-            } while (pb == pa);
-
-            // Crossover and mutation (based on probabilities)
-            float r_cross = (float) std::rand() / (float) RAND_MAX;
-            float r_mut = (float) std::rand() / (float) RAND_MAX;
-            if (r_cross < cross_prob) {
-                crossover(pa, pb);
-            }
-
-            if (r_mut < mut_prob) {
-                mutate(pa);
-                mutate(pb);
-            }
-
-            // Add the 2 new children to new population (if valid)
-            if (g.is_hamiltonian(pa) && std::find(new_individuals.begin(), new_individuals.end(), pa) == new_individuals.end()) {
-                new_individuals.push_back(pa);
-            }
-            if (new_individuals.size() < pop_size) {
-                if (g.is_hamiltonian(pb) && std::find(new_individuals.begin(), new_individuals.end(), pb) == new_individuals.end()) {
-                    new_individuals.push_back(pb);
-                }
+std::vector<std::vector<int>> init_population(TspGraph g, std::size_t pop_size, unsigned int *seed) {
+    std::size_t generated = 0;
+    std::vector<std::vector<int>> individuals(pop_size);
+    while (generated < pop_size) {
+        std::vector<int> path = g.rand_hamiltonian(seed);
+        if (!path.empty()) {
+            // If path is not already in population, add it
+            if (std::find(individuals.begin(), individuals.end(), path) == individuals.end()) {
+                individuals[generated] = path;
+                generated++;
             }
         }
-        population.set_individuals(new_individuals);
-        generations++;
     }
+    return individuals;
+}
 
-    return;
+std::vector<int> pick_parent(std::vector<std::vector<int>> pop, std::vector<float> scores,
+        int k, unsigned int *seedp) {
+    // int i = rand_r(seedp) % (pop.size()-k+1);
+    // int j = i+k-1;
+
+    float min = std::numeric_limits<float>::infinity();
+    int r, ind=0;
+
+    for (int i=0; i<k; i++) {
+        r = rand_r(seedp) % (pop.size());
+        if (scores[r] < min) {
+            min = scores[r];
+            ind = r;
+        }
+    }
+    return pop[ind];
 }
 
 
@@ -95,7 +66,125 @@ int main(int argc, char* argv[]) {
 
     std::cout << "\n";
 
+    // Calculate partitions over population for each thread
+    std::vector<std::pair<std::size_t, std::size_t>> ranges(nw);
+    std::size_t delta {pop_size/nw};
+    std::size_t start, end;
+    for (int i=0; i<nw; i++) {
+        start = (std::size_t) i*delta;
+        end = (std::size_t)(i != (nw-1) ? (i+1)*delta-1 : pop_size-1);
+        ranges[i] = std::make_pair(start, end);
+    }
 
+    // Initialize random population and genetic algo structures
+    std::vector<std::vector<int>> pop = init_population(g, pop_size, &seed);
+    std::vector<std::vector<int>> new_pop(pop_size);
+    std::vector<float> scores(pop_size);
+
+    std::vector<Barrier> barriers1(max_gen);
+    std::vector<Barrier> barriers2(max_gen);
+
+    for (auto &b : barriers1)
+        b.set_t(nw);
+    for (auto &b : barriers2)
+        b.set_t(nw);
+
+    auto th_task = [&](std::pair<std::size_t,std::size_t> range, unsigned int seed) {
+
+        std::size_t start = range.first;
+        std::size_t end = range.second;
+        std::vector<std::vector<int>> *ppop = &pop;
+        std::vector<std::vector<int>> *pnew_pop = &new_pop;
+
+        // Start genetic algorithm
+        for (int gen=0; gen<max_gen; gen++) {
+
+            // Compute scores in thread range
+            for (std::size_t i=start; i<=end; i++) {
+                scores[i] = g.path_length((*ppop)[i]);
+                // score = 1/score;
+                // sum += score;
+                // scores.push_back(score);
+            }
+
+            // Add barrier HERE
+            barriers1[gen].bwait();
+
+            // // Compute minimum and print
+            // auto min_el = std::min_element(scores.begin(), scores.end());
+            // int min_pos = std::distance(scores.begin(), min_el);
+            //
+            // std::cout << "Min path length: " << scores[min_pos] << std::endl;
+            // std::cout << "Path: " << std::endl;
+            // print_path(pop[min_pos]);
+
+            int generated = 0, sub_pop = end-start+1;
+
+            while (generated < sub_pop) {
+
+                // Select 2 different random parents based on fitness scores
+                // TODO: CHANGE K
+                std::vector<int> pa = pick_parent(*ppop, scores, 10, &seed);
+                std::vector<int> pb = pick_parent(*ppop, scores, 10, &seed);
+
+                // std::cout << "ciao " << gen << " " << generated << std::endl;
+
+                // Crossover and mutation (based on probabilities)
+                float r_cross = (float) rand_r(&seed) / (float) RAND_MAX;
+                float r_mut = (float) rand_r(&seed) / (float) RAND_MAX;
+                if (r_cross < cross_prob) {
+                    crossover(pa, pb, &seed);
+                }
+                if (r_mut < mut_prob) {
+                    mutate(pa, &seed);
+                    mutate(pb, &seed);
+                }
+
+                // Add the 2 new paths to new population (if hamiltonian)
+                if (g.is_hamiltonian(pa)) {
+                    (*pnew_pop)[start+generated] = pa;
+                    generated++;
+                }
+                if (generated < sub_pop) {
+                    if (g.is_hamiltonian(pb)) {
+                        (*pnew_pop)[start+generated] = pb;
+                        generated++;
+                    }
+                }
+
+            }
+
+            barriers2[gen].bwait();
+
+            std::swap(ppop, pnew_pop);
+        }
+    };
+
+    std::vector<std::thread> tids;
+
+    auto start_t = std::chrono::high_resolution_clock::now();
+
+    // Start threads and join
+    for (int i=0; i<nw; i++) {
+        tids.push_back(std::thread(th_task, ranges[i], seed+i));
+    }
+    for (std::thread &t: tids) {
+        t.join();
+    }
+
+    // Compute minimum and print
+    auto min_el = std::min_element(scores.begin(), scores.end());
+    int min_pos = std::distance(scores.begin(), min_el);
+
+    std::cout << "Min path length: " << scores[min_pos] << std::endl;
+    std::cout << "Path: " << std::endl;
+    print_path(pop[min_pos]);
+
+    std::cout << std::endl;
+    auto end_t = std::chrono::high_resolution_clock::now();
+    auto tot_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_t - start_t).count();
+
+    std::cout << "Total time: " << tot_time << " ms" << std::endl;
 
     return 0;
 }

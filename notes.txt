@@ -4,3 +4,9 @@ Dynamic Approach
 
 - Parameter tuning, not any kind of dynamic adaptive procedure to find cross_prob
     and mut_prob
+- High cross prob, low mut prob (otherwise random search)
+
+------
+
+- Tournament selection for tsppar_th
+- tried classes (still in proj folder?) but too complex design for parallel programming
