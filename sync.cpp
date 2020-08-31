@@ -4,12 +4,21 @@
 
 #include "sync.hpp"
 
-// initially set number of threads to await
-void Barrier::set_t(int n) {
-    nt = n;
+void ActiveBarrier::set_t(int n) {
+    this->n = n;
 }
 
-void Barrier::bwait() {
+void ActiveBarrier::bwait() {
+    n--;
+    while(n != 0);
+}
+
+
+void BlockingBarrier::set_t(int n) {
+    this->nt = n;
+}
+
+void BlockingBarrier::bwait() {
     std::unique_lock<std::mutex> lk(lock);
     now++;
     if(now == nt) {

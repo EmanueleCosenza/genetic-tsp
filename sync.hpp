@@ -5,20 +5,37 @@
 #include <condition_variable>
 #include <iostream>
 
-class Barrier {
+#include <iostream>
+#include <atomic>
+
+class ActiveBarrier {
+
+private:
+    std::atomic<int> n;
+
+public:
+    ActiveBarrier() {}
+    ActiveBarrier(int n): n(n) {}
+
+    void set_t(int n);
+    void bwait();
+
+};
+
+class BlockingBarrier {
 
 private:
     std::mutex lock;
     std::condition_variable cv;
-    int nt = 1;
+    int nt;
     int now = 0;
 
 public:
-    Barrier() {
+    BlockingBarrier() {
         nt = 1;
         now = 0;
     }
-    // initially set number of threads to await
+
     void set_t(int n);
     void bwait();
 

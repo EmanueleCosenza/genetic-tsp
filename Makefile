@@ -5,17 +5,20 @@ OPTFLAGS = -finline-functions -DNDEBUG
 INCLUDES = -I ./fastflow
 LDFLAGS = -pthread
 
-TARGETS = tspseq tsppar_sp tsppar_th tsppar_ff tspbrute csv
-OBJS = tspseq.o tsppar_sp.o tsppar_th.o tsppar_ff.o tspbrute.o sync.o csv.o graph.o genetic.o
+TARGETS = tspseq tsppar_th tsppar_ff tspbrute csv
+OBJS = tspseq.o tsppar_th.o tsppar_ff.o tspbrute.o sync.o csv.o graph.o genetic.o
+
+.PHONY: all clean
+.SUFFIXES: .cpp .o .hpp
 
 tspseq: tspseq.o graph.o genetic.o
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
-tsppar_sp: tsppar_sp.o graph.o genetic.o
-	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
-
 tsppar_th: tsppar_th.o sync.o graph.o genetic.o
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+
+tsppar_th_block: tsppar_th.o sync.o graph.o genetic.o
+	$(CXX) $(CXXFLAGS) -DBLOCKING $^ -o $@ $(LDFLAGS)
 
 tsppar_ff: tsppar_ff.o graph.o genetic.o
 	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $^ -o $@ $(LDFLAGS)

@@ -11,40 +11,6 @@
 using namespace ff;
 
 
-std::vector<std::vector<int>> init_population(TspGraph g, std::size_t pop_size, unsigned int *seed) {
-    std::size_t generated = 0;
-    std::vector<std::vector<int>> individuals(pop_size);
-    while (generated < pop_size) {
-        std::vector<int> path = g.rand_hamiltonian(seed);
-        if (!path.empty()) {
-            // If path is not already in population, add it
-            if (std::find(individuals.begin(), individuals.end(), path) == individuals.end()) {
-                individuals[generated] = path;
-                generated++;
-            }
-        }
-    }
-    return individuals;
-}
-
-std::vector<int> pick_parent(std::vector<std::vector<int>> pop, std::vector<float> scores,
-        int k, unsigned int *seedp) {
-    // int i = rand_r(seedp) % (pop.size()-k+1);
-    // int j = i+k-1;
-
-    float min = std::numeric_limits<float>::infinity();
-    int r, ind=0;
-
-    for (int i=0; i<k; i++) {
-        r = rand_r(seedp) % (pop.size());
-        if (scores[r] < min) {
-            min = scores[r];
-            ind = r;
-        }
-    }
-    return pop[ind];
-}
-
 struct Task {
     std::vector<std::vector<int>> pop;
     std::vector<float> scores;
@@ -79,7 +45,7 @@ struct Master: ff_monode_t<Task> {
     Task* svc(Task *t) {
         if (t == NULL) {
             // First call
-            for(size_t i=0; i<nw; ++i) {
+            for(size_t i=0; i<(std::size_t)nw; ++i) {
                 ff_send_out_to(new Task(pop, std::vector<float>()), i);
             }
             return GO_ON;
@@ -95,7 +61,7 @@ struct Master: ff_monode_t<Task> {
                     scores.insert(scores.end(), v.begin(), v.end());
                 rec = 0;
                 sub_scores = std::vector<std::vector<float>>(nw);
-                for(size_t i=0; i<nw; ++i) {
+                for(size_t i=0; i<(std::size_t)nw; ++i) {
                     ff_send_out_to(new Task(pop, scores), i);
                 }
             }
@@ -115,7 +81,7 @@ struct Master: ff_monode_t<Task> {
                     delete t;
                     return EOS;
                 }
-                for(size_t i=0; i<nw; ++i) {
+                for(size_t i=0; i<(std::size_t)nw; ++i) {
                     ff_send_out_to(new Task(pop, std::vector<float>()), i);
                 }
             }
@@ -147,7 +113,7 @@ struct Worker: ff_node_t<Task> {
             std::vector<std::vector<int>> pop = t->pop;
             std::vector<float> scores(range.second-range.first+1);
 
-            for (int i=0; i<range.second-range.first+1; i++) {
+            for (std::size_t i=0; i<(std::size_t)range.second-range.first+1; i++) {
                 scores[i] = g.path_length(pop[range.first+i]);
             }
             delete t;

@@ -27,48 +27,57 @@ int main(int argc, char* argv[]) {
     g.from(graph_file);
     g.print();
 
-    std::cout << "\n";
+    std::cout << std::endl;
 
     // Create initial population of tsp paths
-    // TspPopulation population {pop_size, g};
-    // population.init_population(&seed);
-    std::vector<std::vector<int>> individuals(pop_size);
+    std::vector<std::vector<int>> individuals = init_population(g, pop_size, &seed);
     std::vector<float> scores(pop_size);
-
-    // Initialize random population
-    // init_population(individuals);
-    std::size_t generated = 0;
-    while (generated < pop_size) {
-        std::vector<int> path = g.rand_hamiltonian(&seed);
-        if (!path.empty()) {
-            // If path is not already in population, add it
-            if (std::find(individuals.begin(), individuals.end(), path) == individuals.end()) {
-                individuals[generated] = path;
-                generated++;
-            }
-        }
-    }
 
     auto start = std::chrono::high_resolution_clock::now();
 
     // Genetic algorithm loop
     for (int gen=0; gen<=max_gen; gen++) {
 
-        // std::cout << "Generation " << gen << '\n';
-
         // Compute scores
         for (std::size_t i=0; i<pop_size; i++) {
             scores[i] = g.path_length(individuals[i]);
-            // score = 1/score;
-            // sum += score;
-            // scores.push_back(score);
+        }
+
+        std::vector<std::vector<int>> new_individuals;
+
+        while (new_individuals.size() < pop_size) {
+            // Select 2 different random parents based on fitness scores
+            // TODO: CHANGE K
+            std::vector<int> pa = pick_parent(individuals, scores, 10, &seed);
+            std::vector<int> pb = pick_parent(individuals, scores, 10, &seed);
+
+            // Crossover and mutation (based on probabilities)
+            float r_cross = (float) rand_r(&seed) / (float) RAND_MAX;
+            float r_mut = (float) rand_r(&seed) / (float) RAND_MAX;
+            if (r_cross < cross_prob) {
+                crossover(pa, pb, &seed);
+            }
+            if (r_mut < mut_prob) {
+                mutate(pa, &seed);
+                mutate(pb, &seed);
+            }
+
+            // Add the 2 new paths to new population (if hamiltonian)
+            if (g.is_hamiltonian(pa)) {
+                new_individuals.push_back(pa);
+            }
+            if (new_individuals.size() < pop_size) {
+                if (g.is_hamiltonian(pb)) {
+                    new_individuals.push_back(pb);
+                }
+            }
         }
     }
 
-    std::cout << '\n';
     auto end = std::chrono::high_resolution_clock::now();
     auto tot_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
+    std::cout << std::endl;
     std::cout << "Total time: " << tot_time << " ms" << std::endl;
 
     return 0;

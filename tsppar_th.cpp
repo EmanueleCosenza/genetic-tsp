@@ -46,8 +46,13 @@ int main(int argc, char* argv[]) {
     std::vector<std::vector<int>> new_pop(pop_size);
     std::vector<float> scores(pop_size);
 
-    std::vector<Barrier> barriers1(max_gen);
-    std::vector<Barrier> barriers2(max_gen);
+#ifdef BLOCKING
+    std::vector<BlockingBarrier> barriers1(max_gen);
+    std::vector<BlockingBarrier> barriers2(max_gen);
+#else
+    std::vector<ActiveBarrier> barriers1(max_gen);
+    std::vector<ActiveBarrier> barriers2(max_gen);
+#endif
 
     for (auto &b : barriers1)
         b.set_t(nw);
