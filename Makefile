@@ -17,7 +17,7 @@ tsppar_sp: tsppar_sp.o graph.o genetic.o
 tsppar_th: tsppar_th.o sync.o graph.o genetic.o
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
-tsppar_ff: tsppar_ff.o graph.o
+tsppar_ff: tsppar_ff.o graph.o genetic.o
 	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $^ -o $@ $(LDFLAGS)
 
 tsppar_ff.o: tsppar_ff.cpp
