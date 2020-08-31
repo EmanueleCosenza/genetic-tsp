@@ -44,80 +44,36 @@ void mutate(std::vector<int> &path, unsigned int *seedp) {
     path[j] = temp;
 }
 
-void TspPopulation::init_population(unsigned int *seedp) {
-    // Create 'size' tsp random paths
+std::vector<std::vector<int>> init_population(TspGraph g, std::size_t pop_size, unsigned int *seed) {
     std::size_t generated = 0;
-    while (generated < size) {
-        std::vector<int> path = g.rand_hamiltonian(seedp);
+    std::vector<std::vector<int>> individuals(pop_size);
+    while (generated < pop_size) {
+        std::vector<int> path = g.rand_hamiltonian(seed);
         if (!path.empty()) {
             // If path is not already in population, add it
             if (std::find(individuals.begin(), individuals.end(), path) == individuals.end()) {
-                individuals.push_back(path);
+                individuals[generated] = path;
                 generated++;
             }
         }
     }
+    return individuals;
 }
 
-void TspPopulation::set_individuals(std::vector<std::vector<int>> individuals) {
-    this->individuals = individuals;
-    size = individuals.size();
-    scores = std::vector<float>();
-}
+std::vector<int> pick_parent(std::vector<std::vector<int>> pop, std::vector<float> scores,
+        int k, unsigned int *seedp) {
+    // int i = rand_r(seedp) % (pop.size()-k+1);
+    // int j = i+k-1;
 
+    float min = std::numeric_limits<float>::infinity();
+    int r, ind=0;
 
-// Compute scores as mating probabilities (shorter path -> higher prob.)
-void TspPopulation::compute_scores() {
-    float sum = 0;
-    float score;
-
-    for (std::size_t i=0; i<individuals.size(); i++) {
-        score = g.path_length(individuals[i]);
-        // Update best path if necessary
-        if (score<best_length) {
-            best_length = score;
-            best_path = individuals[i];
-        }
-        score = 1/score;
-        sum += score;
-        scores.push_back(score);
-    }
-    for (std::size_t i=0; i<scores.size(); i++) {
-        scores[i] /= sum;
-    }
-}
-
-void TspPopulation::print_scores() {
-    std::cout << "Printing population and scores:" << '\n';
-    for (std::size_t i=0; i<scores.size(); i++) {
-        for (auto node : individuals[i]) {
-            std::cout << node << " ";
-        }
-        std::cout << ": " << scores[i] << '\n';
-    }
-}
-
-std::vector<int> TspPopulation::get_best_path() {
-    return best_path;
-}
-
-float TspPopulation::get_best_length() {
-    return best_length;
-}
-
-// Pick a parent path according to computed probabilities
-std::vector<int> TspPopulation::pick_parent(unsigned int *seedp) {
-    float r = (float) rand_r(seedp) / (float) RAND_MAX; // random between 0 and 1
-    std::size_t i = 0;
-    while (r>0) {
-        r -= scores[i];
-        if (r>0) {
-            i++;
-            if (i >= individuals.size()) {
-                i = individuals.size()-1;
-                break;
-            }
+    for (int i=0; i<k; i++) {
+        r = rand_r(seedp) % (pop.size());
+        if (scores[r] < min) {
+            min = scores[r];
+            ind = r;
         }
     }
-    return individuals[i];
+    return pop[ind];
 }

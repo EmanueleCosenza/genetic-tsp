@@ -7,6 +7,7 @@
 #include <ff/farm.hpp>
 #include "graph.hpp"
 #include "genetic.hpp"
+
 using namespace ff;
 
 
@@ -77,7 +78,7 @@ struct Master: ff_monode_t<Task> {
 
     Task* svc(Task *t) {
         if (t == NULL) {
-            // First time
+            // First call
             for(size_t i=0; i<nw; ++i) {
                 ff_send_out_to(new Task(pop, std::vector<float>()), i);
             }
@@ -98,6 +99,7 @@ struct Master: ff_monode_t<Task> {
                     ff_send_out_to(new Task(pop, scores), i);
                 }
             }
+            delete t;
             return GO_ON;
         } else {
             // Evolution feedback
@@ -109,11 +111,15 @@ struct Master: ff_monode_t<Task> {
                 sub_pops = std::vector<std::vector<std::vector<int>>>(nw);
                 rec = 0;
                 gen++;
-                if (gen >= max_gen) return EOS;
+                if (gen >= max_gen) {
+                    delete t;
+                    return EOS;
+                }
                 for(size_t i=0; i<nw; ++i) {
                     ff_send_out_to(new Task(pop, std::vector<float>()), i);
                 }
             }
+            delete t;
             return GO_ON;
         }
 
@@ -144,11 +150,7 @@ struct Worker: ff_node_t<Task> {
             for (int i=0; i<range.second-range.first+1; i++) {
                 scores[i] = g.path_length(pop[range.first+i]);
             }
-
-            // for (auto a : scores)
-            //     std::cout << a << " ";
-            // std::cout << '\n';
-            // delete t;
+            delete t;
             return new Task(std::vector<std::vector<int>>(), scores);
         } else {
             // Evolution phase
@@ -188,7 +190,7 @@ struct Worker: ff_node_t<Task> {
                     }
                 }
             }
-
+            delete t;
             return new Task(new_sub_pop, std::vector<float>());
         }
 

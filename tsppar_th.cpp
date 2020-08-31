@@ -9,40 +9,6 @@
 #include "genetic.hpp"
 #include "sync.hpp"
 
-std::vector<std::vector<int>> init_population(TspGraph g, std::size_t pop_size, unsigned int *seed) {
-    std::size_t generated = 0;
-    std::vector<std::vector<int>> individuals(pop_size);
-    while (generated < pop_size) {
-        std::vector<int> path = g.rand_hamiltonian(seed);
-        if (!path.empty()) {
-            // If path is not already in population, add it
-            if (std::find(individuals.begin(), individuals.end(), path) == individuals.end()) {
-                individuals[generated] = path;
-                generated++;
-            }
-        }
-    }
-    return individuals;
-}
-
-std::vector<int> pick_parent(std::vector<std::vector<int>> pop, std::vector<float> scores,
-        int k, unsigned int *seedp) {
-    // int i = rand_r(seedp) % (pop.size()-k+1);
-    // int j = i+k-1;
-
-    float min = std::numeric_limits<float>::infinity();
-    int r, ind=0;
-
-    for (int i=0; i<k; i++) {
-        r = rand_r(seedp) % (pop.size());
-        if (scores[r] < min) {
-            min = scores[r];
-            ind = r;
-        }
-    }
-    return pop[ind];
-}
-
 
 int main(int argc, char* argv[]) {
 
@@ -63,10 +29,9 @@ int main(int argc, char* argv[]) {
     TspGraph g;
     g.from(graph_file);
     g.print();
+    std::cout << std::endl;
 
-    std::cout << "\n";
-
-    // Calculate partitions over population for each thread
+    // Compute partitions over the population for each thread
     std::vector<std::pair<std::size_t, std::size_t>> ranges(nw);
     std::size_t delta {pop_size/nw};
     std::size_t start, end;
@@ -96,27 +61,15 @@ int main(int argc, char* argv[]) {
         std::vector<std::vector<int>> *ppop = &pop;
         std::vector<std::vector<int>> *pnew_pop = &new_pop;
 
-        // Start genetic algorithm
+        // Start evolution
         for (int gen=0; gen<max_gen; gen++) {
 
-            // Compute scores in thread range
+            // Compute fitness scores in this thread's range
             for (std::size_t i=start; i<=end; i++) {
                 scores[i] = g.path_length((*ppop)[i]);
-                // score = 1/score;
-                // sum += score;
-                // scores.push_back(score);
             }
 
-            // Add barrier HERE
             barriers1[gen].bwait();
-
-            // // Compute minimum and print
-            // auto min_el = std::min_element(scores.begin(), scores.end());
-            // int min_pos = std::distance(scores.begin(), min_el);
-            //
-            // std::cout << "Min path length: " << scores[min_pos] << std::endl;
-            // std::cout << "Path: " << std::endl;
-            // print_path(pop[min_pos]);
 
             int generated = 0, sub_pop = end-start+1;
 
@@ -126,8 +79,6 @@ int main(int argc, char* argv[]) {
                 // TODO: CHANGE K
                 std::vector<int> pa = pick_parent(*ppop, scores, 10, &seed);
                 std::vector<int> pb = pick_parent(*ppop, scores, 10, &seed);
-
-                // std::cout << "ciao " << gen << " " << generated << std::endl;
 
                 // Crossover and mutation (based on probabilities)
                 float r_cross = (float) rand_r(&seed) / (float) RAND_MAX;
@@ -156,12 +107,12 @@ int main(int argc, char* argv[]) {
 
             barriers2[gen].bwait();
 
+            // Swap pointers
             std::swap(ppop, pnew_pop);
         }
     };
 
     std::vector<std::thread> tids;
-
     auto start_t = std::chrono::high_resolution_clock::now();
 
     // Start threads and join
@@ -172,18 +123,18 @@ int main(int argc, char* argv[]) {
         t.join();
     }
 
+    auto end_t = std::chrono::high_resolution_clock::now();
+    auto tot_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_t - start_t).count();
+
     // Compute minimum and print
     auto min_el = std::min_element(scores.begin(), scores.end());
     int min_pos = std::distance(scores.begin(), min_el);
-
     std::cout << "Min path length: " << scores[min_pos] << std::endl;
     std::cout << "Path: " << std::endl;
     print_path(pop[min_pos]);
 
+    // Print elapsed time
     std::cout << std::endl;
-    auto end_t = std::chrono::high_resolution_clock::now();
-    auto tot_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_t - start_t).count();
-
     std::cout << "Total time: " << tot_time << " ms" << std::endl;
 
     return 0;
