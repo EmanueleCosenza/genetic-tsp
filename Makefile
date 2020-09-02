@@ -5,10 +5,16 @@ OPTFLAGS = -finline-functions -DNDEBUG
 INCLUDES = -I ./fastflow
 LDFLAGS = -pthread
 
-TARGETS = tspseq tsppar_th tsppar_ff tspbrute csv
+TARGETS = tspseq tsppar_th tsppar_th_block tsppar_ff  tspbrute csv
 OBJS = tspseq.o tsppar_th.o tsppar_ff.o tspbrute.o sync.o csv.o graph.o genetic.o
 
-.PHONY: all clean
+POP_SIZE = 1000
+MAX_GEN = 100
+RUNS = 8
+NW = 64
+
+
+.PHONY: all clean exp
 .SUFFIXES: .cpp .o .hpp
 
 tspseq: tspseq.o graph.o genetic.o
@@ -38,3 +44,8 @@ clean:
 	rm -f $(OBJS) $(TARGETS)
 
 all: $(TARGETS)
+
+exp: $(TARGETS)
+	bash experiment.sh complete.csv $(POP_SIZE) 0.9 0.1 $(MAX_GEN) $(RUNS) $(NW) 123
+	python3 data_analysis.py $(RUNS) $(NW)
+	rm test_data.csv

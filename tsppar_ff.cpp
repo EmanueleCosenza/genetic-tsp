@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Path: " << std::endl;
     print_path(pop[min_pos]);
 
-    std::cout << "Time: " << ffTime(GET_TIME) << "\n";
+    std::cout << "Total time: " << ffTime(GET_TIME) << "\n";
 
     return 0;
 }

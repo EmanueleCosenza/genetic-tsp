@@ -72,7 +72,15 @@ int main(int argc, char* argv[]) {
                 }
             }
         }
+        individuals = new_individuals;
     }
+
+    // Compute minimum and print
+    auto min_el = std::min_element(scores.begin(), scores.end());
+    int min_pos = std::distance(scores.begin(), min_el);
+    std::cout << "Min path length: " << scores[min_pos] << std::endl;
+    std::cout << "Path: " << std::endl;
+    print_path(individuals[min_pos]);
 
     auto end = std::chrono::high_resolution_clock::now();
     auto tot_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
