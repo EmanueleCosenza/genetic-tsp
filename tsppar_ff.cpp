@@ -12,10 +12,15 @@ using namespace ff;
 
 
 struct Task {
-    std::vector<std::vector<int>> pop;
-    std::vector<float> scores;
+    std::vector<std::vector<int>> *pop;
+    std::vector<float> *scores;
+    std::vector<std::vector<int>> *new_pop;
+    int phase = 0;
 
-    Task(std::vector<std::vector<int>> pop, std::vector<float> scores): pop(pop), scores(scores) {};
+    Task(std::vector<std::vector<int>> *pop,
+         std::vector<float> *scores,
+         std::vector<std::vector<int>> *new_pop,
+         int phase): pop(pop), scores(scores), new_pop(new_pop), phase(phase) {};
 };
 
 struct Master: ff_monode_t<Task> {
@@ -23,22 +28,21 @@ struct Master: ff_monode_t<Task> {
     int nw;
     int gen = 0;
     int max_gen;
-    std::vector<std::vector<int>> pop;
-    std::vector<float> scores;
-    std::vector<std::vector<std::vector<int>>> sub_pops;
-    std::vector<std::vector<float>> sub_scores;
+    std::vector<std::vector<int>> *pop;
+    std::vector<std::vector<int>> *new_pop;
+    std::vector<float> *scores;
     int rec = 0;
 
-    Master(int nw, int max_gen, std::vector<std::vector<int>> pop): nw(nw), max_gen(max_gen), pop(pop) {
-        sub_scores = std::vector<std::vector<float>>(nw);
-        sub_pops = std::vector<std::vector<std::vector<int>>>(nw);
+    Master(int nw, int max_gen, std::vector<std::vector<int>> *pop): nw(nw), max_gen(max_gen), pop(pop) {
+        scores = new std::vector<float>((*pop).size());
+        new_pop = new std::vector<std::vector<int>>((*pop).size());
     };
 
-    std::vector<std::vector<int>> get_pop() {
+    std::vector<std::vector<int>>* get_pop() {
         return pop;
     }
 
-    std::vector<float> get_scores() {
+    std::vector<float>* get_scores() {
         return scores;
     }
 
@@ -46,35 +50,24 @@ struct Master: ff_monode_t<Task> {
         if (t == NULL) {
             // First call
             for(size_t i=0; i<(std::size_t)nw; ++i) {
-                ff_send_out_to(new Task(pop, std::vector<float>()), i);
+                ff_send_out_to(new Task(pop, scores, new_pop, 0), i);
             }
             return GO_ON;
         }
 
-        if ((t->pop).empty()) {
+        if (t->phase == 0) {
             // Evaluation feedback
-            sub_scores[get_channel_id()] = t->scores;
-
             if (++rec == nw) {
-                scores = std::vector<float>();
-                for(const auto &v: sub_scores)
-                    scores.insert(scores.end(), v.begin(), v.end());
                 rec = 0;
-                sub_scores = std::vector<std::vector<float>>(nw);
                 for(size_t i=0; i<(std::size_t)nw; ++i) {
-                    ff_send_out_to(new Task(pop, scores), i);
+                    ff_send_out_to(new Task(t->pop, t->scores, t->new_pop, 1), i);
                 }
             }
             delete t;
             return GO_ON;
         } else {
             // Evolution feedback
-            sub_pops[get_channel_id()] = t->pop;
             if (++rec == nw) {
-                pop = std::vector<std::vector<int>>();
-                for(const auto &v: sub_pops)
-                    pop.insert(pop.end(), v.begin(), v.end());
-                sub_pops = std::vector<std::vector<std::vector<int>>>(nw);
                 rec = 0;
                 gen++;
                 if (gen >= max_gen) {
@@ -82,7 +75,7 @@ struct Master: ff_monode_t<Task> {
                     return EOS;
                 }
                 for(size_t i=0; i<(std::size_t)nw; ++i) {
-                    ff_send_out_to(new Task(pop, std::vector<float>()), i);
+                    ff_send_out_to(new Task(t->pop, t->scores, t->new_pop, 0), i);
                 }
             }
             delete t;
@@ -108,30 +101,25 @@ struct Worker: ff_node_t<Task> {
 
     Task* svc(Task *t) {
 
-        if ((t->scores).empty()) {
+        if (t->phase == 0) {
             // Evaluation phase
-            std::vector<std::vector<int>> pop = t->pop;
-            std::vector<float> scores(range.second-range.first+1);
-
-            for (std::size_t i=0; i<(std::size_t)range.second-range.first+1; i++) {
-                scores[i] = g.path_length(pop[range.first+i]);
+            for (std::size_t i=range.first; i<=range.second; i++) {
+                (*t->scores)[i] = g.path_length((*t->pop)[i]);
             }
+            ff_send_out(new Task(t->pop, t->scores, t->new_pop, 0));
             delete t;
-            return new Task(std::vector<std::vector<int>>(), scores);
+            return GO_ON;
         } else {
             // Evolution phase
-            std::vector<std::vector<int>> pop = t->pop;
-            std::vector<float> scores = t->scores;
 
             int generated = 0, sub_pop_size = range.second-range.first+1;
-            std::vector<std::vector<int>> new_sub_pop(sub_pop_size);
 
             while (generated < sub_pop_size) {
 
                 // Select 2 different random parents based on fitness scores
                 // TODO: CHANGE K
-                std::vector<int> pa = pick_parent(pop, scores, 10, &seed);
-                std::vector<int> pb = pick_parent(pop, scores, 10, &seed);
+                std::vector<int> pa = pick_parent(*t->pop, *t->scores, 10, &seed);
+                std::vector<int> pb = pick_parent(*t->pop, *t->scores, 10, &seed);
 
                 // Crossover and mutation (based on probabilities)
                 float r_cross = (float) rand_r(&seed) / (float) RAND_MAX;
@@ -146,18 +134,20 @@ struct Worker: ff_node_t<Task> {
 
                 // Add the 2 new paths to new population (if hamiltonian)
                 if (g.is_hamiltonian(pa)) {
-                    new_sub_pop[generated] = pa;
+                    (*(t->new_pop))[generated+range.first] = pa;
                     generated++;
                 }
                 if (generated < sub_pop_size) {
                     if (g.is_hamiltonian(pb)) {
-                        new_sub_pop[generated] = pb;
+                        (*(t->new_pop))[generated+range.first] = pb;
                         generated++;
                     }
                 }
             }
+            std::swap(t->pop, t->new_pop);
+            ff_send_out(new Task(t->pop, t->scores, t->new_pop, 1));
             delete t;
-            return new Task(new_sub_pop, std::vector<float>());
+            return GO_ON;
         }
 
     }
@@ -202,7 +192,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::vector<int>> pop_i = init_population(g, pop_size, &seed);
     for (int i = 0; i < nw; ++i)
         w.push_back(std::make_unique<Worker>(g, pop_size, cross_prob, mut_prob, ranges[i], seed+i));
-    Master master(nw, max_gen, pop_i);
+    Master master(nw, max_gen, &pop_i);
 
     // Build farm
     ff_Farm<Task> farm(std::move(w));
@@ -218,8 +208,8 @@ int main(int argc, char *argv[]) {
     }
     ffTime(STOP_TIME);
 
-    std::vector<std::vector<int>> pop = master.get_pop();
-    std::vector<float> scores = master.get_scores();
+    std::vector<std::vector<int>> pop = *(master.get_pop());
+    std::vector<float> scores = *(master.get_scores());
 
     auto min_el = std::min_element(scores.begin(), scores.end());
     int min_pos = std::distance(scores.begin(), min_el);
