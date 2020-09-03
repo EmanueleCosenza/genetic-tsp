@@ -99,7 +99,7 @@ plt.ylim(0)
 plt.legend()
 plt.show()
 
-print("--- FastFlow parallel version with blocking barrier ---")
+print("--- FastFlow parallel version ---")
 
 speedups = best_seq / par_ff_times
 scal = par_ff_times[0] / par_ff_times

@@ -5,8 +5,8 @@ OPTFLAGS = -finline-functions -DNDEBUG
 INCLUDES = -I ./fastflow
 LDFLAGS = -pthread
 
-TARGETS = tspseq tsppar_th tsppar_th_block tsppar_ff  tspbrute csv
-OBJS = tspseq.o tsppar_th.o tsppar_ff.o tspbrute.o sync.o csv.o graph.o genetic.o
+TARGETS = tspseq tsppar_th tsppar_th_block tsppar_ff tsppar_ffpool tsppar_fffor tspbrute csv
+OBJS = tspseq.o tsppar_th.o tsppar_ff.o tsppar_ffpool.o tsppar_fffor.o tspbrute.o sync.o csv.o graph.o genetic.o
 
 POP_SIZE = 1000
 MAX_GEN = 100
@@ -30,6 +30,18 @@ tsppar_ff: tsppar_ff.o graph.o genetic.o
 	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $^ -o $@ $(LDFLAGS)
 
 tsppar_ff.o: tsppar_ff.cpp
+	$(CXX) -c $(CXXFLAGS) $(INCLUDES) $(OPTFLAGS) $^ -o $@ $(LDFLAGS)
+
+tsppar_ffpool: tsppar_ffpool.o graph.o genetic.o
+	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $^ -o $@ $(LDFLAGS)
+
+tsppar_ffpool.o: tsppar_ffpool.cpp
+	$(CXX) -c $(CXXFLAGS) $(INCLUDES) $(OPTFLAGS) $^ -o $@ $(LDFLAGS)
+
+tsppar_fffor: tsppar_fffor.o graph.o genetic.o
+	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $^ -o $@ $(LDFLAGS)
+
+tsppar_fffor.o: tsppar_fffor.cpp
 	$(CXX) -c $(CXXFLAGS) $(INCLUDES) $(OPTFLAGS) $^ -o $@ $(LDFLAGS)
 
 sync.o: sync.cpp sync.hpp
