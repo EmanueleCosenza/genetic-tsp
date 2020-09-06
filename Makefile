@@ -6,11 +6,7 @@ INCLUDES = -I ./fastflow
 LDFLAGS = -pthread
 
 TARGETS = tspseq tsppar_th tsppar_th_block tsppar_ff tsppar_ffpool tsppar_fffor tspbrute csv
-<<<<<<< HEAD
 OBJS = tspseq.o tsppar_th.o tsppar_th_block.o tsppar_ff.o tsppar_ffpool.o tsppar_fffor.o tspbrute.o sync.o csv.o graph.o genetic.o
-=======
-OBJS = tspseq.o tsppar_th.o tsppar_ff.o tsppar_ffpool.o tsppar_fffor.o tspbrute.o sync.o csv.o graph.o genetic.o
->>>>>>> 69364db9fdaa9bf45f69c2a5187e58545d3ef61f
 
 POP_SIZE = 1000
 MAX_GEN = 100

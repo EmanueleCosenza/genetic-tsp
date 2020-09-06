@@ -14,8 +14,8 @@ private:
     std::atomic<int> n;
 
 public:
-    ActiveBarrier() {}
-    ActiveBarrier(int n): n(n) {}
+    SpinBarrier() {}
+    SpinBarrier(int n): n(n) {}
 
     void set_t(int n);
     void bwait();

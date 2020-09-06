@@ -102,7 +102,6 @@ plt.ylim(0)
 plt.legend()
 plt.show()
 
-<<<<<<< HEAD
 print("--- FastFlow poolEvolution version ---")
 
 speedups = best_seq / par_ffpool_times
@@ -135,9 +134,6 @@ plt.legend()
 plt.show()
 
 print("--- FastFlow parallel for version ---")
-=======
-print("--- FastFlow parallel version ---")
->>>>>>> 69364db9fdaa9bf45f69c2a5187e58545d3ef61f
 
 speedups = best_seq / par_ff_times
 scal = par_ff_times[0] / par_ff_times
