@@ -50,8 +50,8 @@ int main(int argc, char* argv[]) {
     std::vector<BlockingBarrier> barriers1(max_gen);
     std::vector<BlockingBarrier> barriers2(max_gen);
 #else
-    std::vector<ActiveBarrier> barriers1(max_gen);
-    std::vector<ActiveBarrier> barriers2(max_gen);
+    std::vector<SpinBarrier> barriers1(max_gen);
+    std::vector<SpinBarrier> barriers2(max_gen);
 #endif
 
     for (auto &b : barriers1)
@@ -76,38 +76,35 @@ int main(int argc, char* argv[]) {
 
             barriers1[gen].bwait();
 
-            int generated = 0, sub_pop = end-start+1;
+            for (std::size_t i=start; i<=end; i++) {
+                bool added = false;
+                while (!added) {
+                    // Select 2 different random parents based on fitness scores
+                    // TODO: CHANGE K
+                    std::vector<int> pa = pick_parent(*ppop, scores, 10, &seed);
+                    std::vector<int> pb = pick_parent(*ppop, scores, 10, &seed);
 
-            while (generated < sub_pop) {
+                    // Crossover and mutation (based on probabilities)
+                    float r_cross = (float) rand_r(&seed) / (float) RAND_MAX;
+                    float r_mut = (float) rand_r(&seed) / (float) RAND_MAX;
+                    if (r_cross < cross_prob) {
+                        crossover(pa, pb, &seed);
+                    }
+                    if (r_mut < mut_prob) {
+                        mutate(pa, &seed);
+                        mutate(pb, &seed);
+                    }
 
-                // Select 2 different random parents based on fitness scores
-                // TODO: CHANGE K
-                std::vector<int> pa = pick_parent(*ppop, scores, 10, &seed);
-                std::vector<int> pb = pick_parent(*ppop, scores, 10, &seed);
-
-                // Crossover and mutation (based on probabilities)
-                float r_cross = (float) rand_r(&seed) / (float) RAND_MAX;
-                float r_mut = (float) rand_r(&seed) / (float) RAND_MAX;
-                if (r_cross < cross_prob) {
-                    crossover(pa, pb, &seed);
-                }
-                if (r_mut < mut_prob) {
-                    mutate(pa, &seed);
-                    mutate(pb, &seed);
-                }
-
-                // Add the 2 new paths to new population (if hamiltonian)
-                if (g.is_hamiltonian(pa)) {
-                    (*pnew_pop)[start+generated] = pa;
-                    generated++;
-                }
-                if (generated < sub_pop) {
-                    if (g.is_hamiltonian(pb)) {
-                        (*pnew_pop)[start+generated] = pb;
-                        generated++;
+                    // Add the 2 new paths to new population (if hamiltonian)
+                    if (g.is_hamiltonian(pa)) {
+                        (*pnew_pop)[i] = pa;
+                        added = true;
+                    }
+                    else if (g.is_hamiltonian(pb)) {
+                        (*pnew_pop)[i] = pb;
+                        added = true;
                     }
                 }
-
             }
 
             barriers2[gen].bwait();
@@ -118,6 +115,7 @@ int main(int argc, char* argv[]) {
     };
 
     std::vector<std::thread> tids;
+
     auto start_t = std::chrono::high_resolution_clock::now();
 
     // Start threads and join

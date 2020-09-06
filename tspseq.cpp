@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
     std::cout << std::endl;
 
     // Create initial population of tsp paths
-    std::vector<std::vector<int>> individuals = init_population(g, pop_size, &seed);
+    std::vector<std::vector<int>> pop = init_population(g, pop_size, &seed);
     std::vector<float> scores(pop_size);
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -40,39 +40,42 @@ int main(int argc, char* argv[]) {
 
         // Compute scores
         for (std::size_t i=0; i<pop_size; i++) {
-            scores[i] = g.path_length(individuals[i]);
+            scores[i] = g.path_length(pop[i]);
         }
 
-        std::vector<std::vector<int>> new_individuals;
+        std::vector<std::vector<int>> new_pop(pop_size);
 
-        while (new_individuals.size() < pop_size) {
-            // Select 2 different random parents based on fitness scores
-            // TODO: CHANGE K
-            std::vector<int> pa = pick_parent(individuals, scores, 10, &seed);
-            std::vector<int> pb = pick_parent(individuals, scores, 10, &seed);
+        for (std::size_t i=0; i<new_pop.size(); i++) {
+            bool added = false;
+            while (!added) {
+                // Select 2 different random parents based on fitness scores
+                // TODO: CHANGE K
+                std::vector<int> pa = pick_parent(pop, scores, 10, &seed);
+                std::vector<int> pb = pick_parent(pop, scores, 10, &seed);
 
-            // Crossover and mutation (based on probabilities)
-            float r_cross = (float) rand_r(&seed) / (float) RAND_MAX;
-            float r_mut = (float) rand_r(&seed) / (float) RAND_MAX;
-            if (r_cross < cross_prob) {
-                crossover(pa, pb, &seed);
-            }
-            if (r_mut < mut_prob) {
-                mutate(pa, &seed);
-                mutate(pb, &seed);
-            }
+                // Crossover and mutation (based on probabilities)
+                float r_cross = (float) rand_r(&seed) / (float) RAND_MAX;
+                float r_mut = (float) rand_r(&seed) / (float) RAND_MAX;
+                if (r_cross < cross_prob) {
+                    crossover(pa, pb, &seed);
+                }
+                if (r_mut < mut_prob) {
+                    mutate(pa, &seed);
+                    mutate(pb, &seed);
+                }
 
-            // Add the 2 new paths to new population (if hamiltonian)
-            if (g.is_hamiltonian(pa)) {
-                new_individuals.push_back(pa);
-            }
-            if (new_individuals.size() < pop_size) {
-                if (g.is_hamiltonian(pb)) {
-                    new_individuals.push_back(pb);
+                // Add the 2 new paths to new population (if hamiltonian)
+                if (g.is_hamiltonian(pa)) {
+                    new_pop[i] = pa;
+                    added = true;
+                }
+                else if (g.is_hamiltonian(pb)) {
+                    new_pop[i] = pb;
+                    added = true;
                 }
             }
         }
-        individuals = new_individuals;
+        pop = new_pop;
     }
 
     // Compute minimum and print
@@ -80,7 +83,7 @@ int main(int argc, char* argv[]) {
     int min_pos = std::distance(scores.begin(), min_el);
     std::cout << "Min path length: " << scores[min_pos] << std::endl;
     std::cout << "Path: " << std::endl;
-    print_path(individuals[min_pos]);
+    print_path(pop[min_pos]);
 
     auto end = std::chrono::high_resolution_clock::now();
     auto tot_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();

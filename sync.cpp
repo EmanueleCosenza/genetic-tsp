@@ -4,11 +4,11 @@
 
 #include "sync.hpp"
 
-void ActiveBarrier::set_t(int n) {
+void SpinBarrier::set_t(int n) {
     this->n = n;
 }
 
-void ActiveBarrier::bwait() {
+void SpinBarrier::bwait() {
     n--;
     while(n != 0);
 }
@@ -21,6 +21,7 @@ void BlockingBarrier::set_t(int n) {
 void BlockingBarrier::bwait() {
     std::unique_lock<std::mutex> lk(lock);
     now++;
+
     if(now == nt) {
         cv.notify_all();
     } else {

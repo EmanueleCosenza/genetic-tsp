@@ -8,7 +8,7 @@
 #include <iostream>
 #include <atomic>
 
-class ActiveBarrier {
+class SpinBarrier {
 
 private:
     std::atomic<int> n;

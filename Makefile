@@ -6,7 +6,7 @@ INCLUDES = -I ./fastflow
 LDFLAGS = -pthread
 
 TARGETS = tspseq tsppar_th tsppar_th_block tsppar_ff tsppar_ffpool tsppar_fffor tspbrute csv
-OBJS = tspseq.o tsppar_th.o tsppar_ff.o tsppar_ffpool.o tsppar_fffor.o tspbrute.o sync.o csv.o graph.o genetic.o
+OBJS = tspseq.o tsppar_th.o tsppar_th_block.o tsppar_ff.o tsppar_ffpool.o tsppar_fffor.o tspbrute.o sync.o csv.o graph.o genetic.o
 
 POP_SIZE = 1000
 MAX_GEN = 100
@@ -23,8 +23,11 @@ tspseq: tspseq.o graph.o genetic.o
 tsppar_th: tsppar_th.o sync.o graph.o genetic.o
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
-tsppar_th_block: tsppar_th.o sync.o graph.o genetic.o
-	$(CXX) $(CXXFLAGS) -DBLOCKING $^ -o $@ $(LDFLAGS)
+tsppar_th_block: tsppar_th_block.o sync.o graph.o genetic.o
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+
+tsppar_th_block.o: tsppar_th.cpp
+	$(CXX) -c -DBLOCKING $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 tsppar_ff: tsppar_ff.o graph.o genetic.o
 	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $^ -o $@ $(LDFLAGS)

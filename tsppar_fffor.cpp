@@ -32,20 +32,21 @@ int main(int argc, char *argv[]) {
 
     std::cout << "\n";
 
-    ParallelFor pf(nw);
     std::vector<std::vector<int>> pop = init_population(g, pop_size, &seed);
     std::vector<std::vector<int>> new_pop(pop_size);
     std::vector<float> scores(pop_size);
+
+    ParallelFor pf(nw);
 
     ffTime(START_TIME);
     for (int gen=0; gen<max_gen; gen++) {
 
         // Compute fitness scores
-        pf.parallel_for(0, pop_size, [&](const long i) {
+        pf.parallel_for(0, pop_size, 1, 0, [&](const long i) {
             scores[i] = g.path_length(pop[i]);
         }, nw);
 
-        pf.parallel_for(0, pop_size, [&](const long i) {
+        pf.parallel_for(0, pop_size, 1, 0, [&](const long i) {
             bool added = false;
 
             while (!added) {

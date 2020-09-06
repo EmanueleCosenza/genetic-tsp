@@ -72,8 +72,8 @@ done
 
 echo ""
 
-# Start parallel runs for each parallelism degree (FastFlow)
-echo "--- Parallel version (FastFlow) ---"
+# Start parallel runs for each parallelism degree (FastFlow, poolEvolution)
+echo "--- Parallel version (FastFlow, poolEvolution) ---"
 for (( nw=1; nw<=$max_nw; nw*=2))
 do
     if [ "$nw" -eq 1 ]; then
@@ -83,7 +83,26 @@ do
     fi
     for (( run=1; run<=$runs; run++))
     do
-        a=$(./tsppar_ff $graph_file $pop_size $cross_prob $mut_prob $max_gen $nw $seed | tail -1 | cut -d ":" -f2 | cut -d " " -f2 | tr -d "\n")
+        a=$(./tsppar_ffpool $graph_file $pop_size $cross_prob $mut_prob $max_gen $nw $seed | tail -1 | cut -d ":" -f2 | cut -d " " -f2 | tr -d "\n")
+        echo "Run $run, time: $a ms"
+        echo "$nw $a" >> ${file}
+    done
+done
+
+echo ""
+
+# Start parallel runs for each parallelism degree (FastFlow, ParallelFor)
+echo "--- Parallel version (FastFlow, ParallelFor) ---"
+for (( nw=1; nw<=$max_nw; nw*=2))
+do
+    if [ "$nw" -eq 1 ]; then
+        echo "Starting $runs runs, $nw worker."
+    else
+        echo "Starting $runs runs, $nw workers."
+    fi
+    for (( run=1; run<=$runs; run++))
+    do
+        a=$(./tsppar_fffor $graph_file $pop_size $cross_prob $mut_prob $max_gen $nw $seed | tail -1 | cut -d ":" -f2 | cut -d " " -f2 | tr -d "\n")
         echo "Run $run, time: $a ms"
         echo "$nw $a" >> ${file}
     done
