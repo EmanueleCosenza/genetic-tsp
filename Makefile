@@ -8,11 +8,6 @@ LDFLAGS = -pthread
 TARGETS = tspseq tsppar_th tsppar_th_block tsppar_ff tsppar_ffpool tsppar_fffor tspbrute csv
 OBJS = tspseq.o tsppar_th.o tsppar_th_block.o tsppar_ff.o tsppar_ffpool.o tsppar_fffor.o tspbrute.o sync.o csv.o graph.o genetic.o
 
-POP_SIZE = 1000
-MAX_GEN = 100
-RUNS = 8
-NW = 64
-
 
 .PHONY: all clean exp
 .SUFFIXES: .cpp .o .hpp
