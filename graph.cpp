@@ -4,6 +4,7 @@
 #include <algorithm>
 #include "graph.hpp"
 
+// Constructs graph from a properly formatted file
 void TspGraph::from(std::string filename) {
     std::ifstream file(filename);
 
@@ -20,6 +21,7 @@ void TspGraph::from(std::string filename) {
     }
 }
 
+// Write graph to file
 void TspGraph::to(std::string filename) {
     std::ofstream file(filename);
 
@@ -31,6 +33,7 @@ void TspGraph::to(std::string filename) {
     }
 }
 
+// Creates a complete graph with random weights
 void TspGraph::rand_complete(int nodes, unsigned int *seedp) {
     for (int i=0; i<nodes; i++) {
         this->add_node();
@@ -43,13 +46,13 @@ void TspGraph::rand_complete(int nodes, unsigned int *seedp) {
 }
 
 void TspGraph::add_node() {
-    // Add new empty adjacency list
+    // Add a new empty adjacency list
     adj_list.push_back(std::vector<std::pair<int, float>>());
 }
 
 void TspGraph::add_edge(int n1, int n2, float weight) {
-    // Add undirected edge with the specified weight
     if (this->are_linked(n1, n2)) return;
+    // Add an undirected edge with the specified weight
     adj_list[n1].push_back(std::pair<int, float>(n2, weight));
     adj_list[n2].push_back(std::pair<int, float>(n1, weight));
 }
@@ -84,8 +87,8 @@ float TspGraph::path_length(std::vector<int> path) {
 }
 
 // Checks if the path is an hamiltonian path of this graph
+// Path must contain nodes all different from each other
 bool TspGraph::is_hamiltonian(std::vector<int> path) {
-    // path contains V different nodes
     int curr_node = path[0];
     for (std::size_t i=1; i<path.size(); i++) {
         bool found = false;
@@ -124,31 +127,38 @@ std::vector<int> TspGraph::rand_hamiltonian(unsigned int *seedp) {
     return path;
 }
 
-// Finds tsp path with a bruteforce algorithm
+// Finds tsp optimal path and its length with a bruteforce algorithm
 std::pair<float, std::vector<int>> TspGraph::bruteforce(std::vector<int> path) {
 
     std::vector<int> pickable;
 
+    // Leaf of the recursion tree
     if (path.size() == adj_list.size()) return std::make_pair(0, path);
     if (path.empty()) {
+        // Root of the recursion tree: first call
         for (std::size_t i=0; i<adj_list.size(); i++) {
             pickable.push_back(i);
         }
     } else {
+        //
         int last_node = path[path.size()-1];
         for (auto pair : adj_list[last_node]) {
+            // Iterate over nodes in the adjacency list of the last node in the path
             if(std::find(path.begin(), path.end(), pair.first) == path.end()) {
+                // Add node to pickable only if it is not already in path
                 pickable.push_back(pair.first);
             }
         }
     }
 
     if (pickable.empty())
+        // Cannot explore any other node, fail
         return std::make_pair(std::numeric_limits<float>::infinity(), path);
 
     float min = std::numeric_limits<float>::infinity();
     std::vector<int> min_path;
 
+    // Iterate over the pickable nodes and recursively call the function
     for (auto node : pickable) {
         std::pair<float, std::vector<int>> len_and_path;
 
@@ -158,6 +168,7 @@ std::pair<float, std::vector<int>> TspGraph::bruteforce(std::vector<int> path) {
 
         float tot_len = len_and_path.first;
         if (!path.empty()) {
+            // Add to tot_len the weight from last node to this node
             int last_node = path[path.size()-1];
             for (auto pair : adj_list[last_node]) {
                 if (pair.first == node) {
@@ -167,6 +178,7 @@ std::pair<float, std::vector<int>> TspGraph::bruteforce(std::vector<int> path) {
             }
         }
 
+        // Update minimum
         if (tot_len < min) {
             min = tot_len;
             min_path = len_and_path.second;

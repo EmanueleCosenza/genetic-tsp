@@ -36,9 +36,11 @@ void crossover(std::vector<int> &pathA, std::vector<int> &pathB, unsigned int *s
 }
 
 void mutate(std::vector<int> &path, unsigned int *seedp) {
+    // Random mutation indices
     int i = rand_r(seedp) % (path.size()-1);
     int j = (i+1) + (rand_r(seedp) % (path.size()-(i+1)));
 
+    // Swap
     int temp = path[i];
     path[i] = path[j];
     path[j] = temp;
@@ -62,12 +64,12 @@ std::vector<std::vector<int>> init_population(TspGraph g, std::size_t pop_size, 
 
 std::vector<int> pick_parent(std::vector<std::vector<int>> pop, std::vector<float> scores,
         int k, unsigned int *seedp) {
-    // int i = rand_r(seedp) % (pop.size()-k+1);
-    // int j = i+k-1;
 
     float min = std::numeric_limits<float>::infinity();
     int r, ind=0;
 
+    // Tournament selection: choose k random elements and pick the one with
+    // minimum fitness score
     for (int i=0; i<k; i++) {
         r = rand_r(seedp) % (pop.size());
         if (scores[r] < min) {

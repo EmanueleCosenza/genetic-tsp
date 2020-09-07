@@ -19,33 +19,32 @@ typedef struct Env_t {
 } Env_t;
 
 bool termination(const std::vector<std::vector<int>> &P, Env_t &env) {
+    // Terminates when the max number of generations is reached
     return env.curr_gen >= env.max_gen;
 }
 
 void selection(ParallelForReduce<std::vector<int>> &mapreduce, std::vector<std::vector<int>> &pop,
     std::vector<std::vector<int>> &new_pop, Env_t &env) {
 
+    // Compute fitness scores
     env.curr_gen++;
     mapreduce.parallel_for(0, pop.size(), [&](const long i) {
         env.scores[i] = (env.g).path_length(pop[i]);
     });
-    // for(int i=0; i<pop.size(); i++) {
-    //     print_path(pop[i]);
-    //     std::cout << "Score: " << env.scores[i] << '\n';
-    // }
-    // std::cout << "--------------------" << '\n';
 
     new_pop = pop;
 
 }
 
 const std::vector<int>& evolution(std::vector<int> &ind, const Env_t &env, int thid) {
+    // Void
     return ind;
 }
 
 void filter(ParallelForReduce<std::vector<int>> &mapreduce, std::vector<std::vector<int>> &pop,
     std::vector<std::vector<int>> &new_pop, Env_t &env) {
 
+    // Execute selection and mating
     mapreduce.parallel_for(0, pop.size(), [&](const long i) {
         bool added = false;
 
@@ -66,6 +65,7 @@ void filter(ParallelForReduce<std::vector<int>> &mapreduce, std::vector<std::vec
                 mutate(pb, &env.seed);
             }
 
+            // Add children to new popultation if hamiltonian
             if (env.g.is_hamiltonian(pa)) {
                 new_pop[i] = pa;
                 added = true;
@@ -130,6 +130,7 @@ int main(int argc, char *argv[]) {
     pop = pool.get_result();
     env = pool.getEnv();
 
+    // Print minimum path and length
     auto min_el = std::min_element(env.scores.begin(), env.scores.end());
     int min_pos = std::distance(env.scores.begin(), min_el);
 

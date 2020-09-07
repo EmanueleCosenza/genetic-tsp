@@ -61,6 +61,5 @@ clean:
 all: $(TARGETS)
 
 exp: $(TARGETS)
-	bash experiment.sh complete.csv $(POP_SIZE) 0.9 0.1 $(MAX_GEN) $(RUNS) $(NW) 123
-	python3 data_analysis.py $(RUNS) $(NW)
-	rm test_data.csv
+	bash experiment.sh exp 0,1,2,3,4 1 4 64 123
+	python3 data_analysis.py exp
