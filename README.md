@@ -20,14 +20,14 @@ run:
 
 ### Testing the single versions
 To test every genetic algorithm against the bruteforce algorithm, run the script
-test.sh.
+`test.sh`.
 To test the sequential version, execute:
 
-./tspseq complete.csv 1000 0.9 0.1 20 123
+    ./tspseq complete.csv 1000 0.9 0.1 20 123
 
-To run a parallel version, for example the ParallelFor one, run:
+To run a parallel version, for example the `ParallelFor` one, run:
 
-./tsppar_fffor complete.csv 1000 0.9 0.1 20 4 123
+    ./tsppar_fffor complete.csv 1000 0.9 0.1 20 4 123
 
 
 ### Running the experiments
