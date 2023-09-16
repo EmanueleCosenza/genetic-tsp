@@ -1,6 +1,7 @@
 # genetic-tsp
 
-Code for the Parallel and Distributed System course project (University of Pisa, MSc Artificial Intelligence, a.y. 2020-2021).
+This repository contains several parallel implementations of a genetic algorithm for the Travelling Salesman Problem (TSP).
+For detailed information about the project, see `report.pdf`.
 
 ### Makefile
 The project contains a Makefile to produce the executables and
