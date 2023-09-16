@@ -1,6 +1,6 @@
 # genetic-tsp
 
-Code for the 
+Code for the Parallel and Distributed System course project (University of Pisa, MSc Artificial Intelligence, a.y. 2020-2021).
 
 ### Makefile
 The project contains a Makefile to produce the executables and
@@ -11,10 +11,10 @@ of the script `experiment.sh` (default: experiment with 3000 individuals).
 
 
 ### Producing a graph file
-Most of the executables need a `.csv` file containing the representation of the input graph. The graph used in the experiments
-is already contained in the project directory as complete.csv.
-To output a new complete graph with `n` nodes and random weights in `graph.csv`,
-just execute:
+Most of the executables need a `.csv` file containing the representation of the input graph. The file representing the graph used in the experiments
+is already contained in the project directory (`complete.csv`).
+To create a new complete graph with `n` nodes and random weights in `graph.csv`,
+run:
 
     ./csv graph.csv n
 
@@ -43,6 +43,6 @@ start of the script.
 ### Plots
 To produce plots, use the python script as follows:
 
-python3 data_analysis.py exp_dir
+    python3 data_analysis.py exp_dir
 
-where exp_dir is the output directory of the script experiment.sh
+where `exp_dir` is the output directory of the script `experiment.sh`.
